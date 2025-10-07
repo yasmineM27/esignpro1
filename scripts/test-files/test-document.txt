@@ -1,0 +1,9 @@
+Ceci est un fichier de test TXT pour vérifier que les fichiers texte sont acceptés par eSignPro.
+
+Contenu du document :
+- Nom : Test Document
+- Type : Fichier texte
+- Format : .txt
+- Encodage : UTF-8
+
+Ce fichier peut être utilisé pour tester l'upload de documents dans l'application eSignPro.

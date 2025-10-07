@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test des Types de Fichiers - eSignPro</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2563eb;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+        }
+        .test-section h2 {
+            color: #374151;
+            margin-top: 0;
+        }
+        .file-input {
+            margin: 10px 0;
+            padding: 10px;
+            border: 2px dashed #d1d5db;
+            border-radius: 6px;
+            background: #f9fafb;
+        }
+        .supported-types {
+            background: #ecfdf5;
+            border: 1px solid #10b981;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 10px 0;
+        }
+        .supported-types h3 {
+            color: #065f46;
+            margin-top: 0;
+        }
+        .type-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .type-item {
+            background: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            border: 1px solid #10b981;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .result {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .success {
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #16a34a;
+        }
+        .error {
+            background: #fef2f2;
+            color: #dc2626;
+            border: 1px solid #ef4444;
+        }
+        button {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        button:hover {
+            background: #1d4ed8;
+        }
+        button:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test des Types de Fichiers Supportés</h1>
+        <p>Cette page permet de tester tous les types de fichiers maintenant supportés par eSignPro.</p>
+
+        <div class="test-section">
+            <h2>📋 Types de Fichiers Supportés</h2>
+            <div class="supported-types">
+                <h3>✅ Formats Acceptés :</h3>
+                <div class="type-list">
+                    <div class="type-item">📷 image/jpeg (.jpg, .jpeg)</div>
+                    <div class="type-item">📷 image/png (.png)</div>
+                    <div class="type-item">📄 application/pdf (.pdf)</div>
+                    <div class="type-item">📝 application/msword (.doc)</div>
+                    <div class="type-item">📝 application/vnd.openxmlformats-officedocument.wordprocessingml.document (.docx)</div>
+                    <div class="type-item">📊 application/vnd.ms-excel (.xls)</div>
+                    <div class="type-item">📊 application/vnd.openxmlformats-officedocument.spreadsheetml.sheet (.xlsx)</div>
+                    <div class="type-item">📄 text/plain (.txt)</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>🆔 Test Carte d'Identité - RECTO</h2>
+            <div class="file-input">
+                <input type="file" id="identity-front" multiple accept="image/jpeg,image/png,image/jpg,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/plain">
+                <button onclick="testUpload('identity_front', 'identity-front')">Tester Upload</button>
+            </div>
+            <div id="result-identity-front" class="result" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>🆔 Test Carte d'Identité - VERSO</h2>
+            <div class="file-input">
+                <input type="file" id="identity-back" multiple accept="image/jpeg,image/png,image/jpg,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/plain">
+                <button onclick="testUpload('identity_back', 'identity-back')">Tester Upload</button>
+            </div>
+            <div id="result-identity-back" class="result" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>📄 Test Contrat d'Assurance</h2>
+            <div class="file-input">
+                <input type="file" id="insurance-contract" multiple accept="application/pdf,image/jpeg,image/png,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/plain">
+                <button onclick="testUpload('insurance_contract', 'insurance-contract')">Tester Upload</button>
+            </div>
+            <div id="result-insurance-contract" class="result" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script>
+        async function testUpload(documentType, inputId) {
+            const input = document.getElementById(inputId);
+            const resultDiv = document.getElementById(`result-${inputId}`);
+            
+            if (!input.files.length) {
+                showResult(resultDiv, 'Veuillez sélectionner au moins un fichier', 'error');
+                return;
+            }
+
+            const formData = new FormData();
+            for (let file of input.files) {
+                formData.append('files', file);
+            }
+            formData.append('token', 'test-token-123');
+            formData.append('clientId', 'test-client-456');
+            formData.append('documentType', documentType);
+
+            try {
+                showResult(resultDiv, 'Test en cours...', 'success');
+                
+                const response = await fetch('/api/client/upload-separated-documents', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    showResult(resultDiv, `✅ Succès ! ${input.files.length} fichier(s) accepté(s) : ${Array.from(input.files).map(f => f.name).join(', ')}`, 'success');
+                } else {
+                    showResult(resultDiv, `❌ Erreur : ${result.error}`, 'error');
+                }
+            } catch (error) {
+                showResult(resultDiv, `❌ Erreur réseau : ${error.message}`, 'error');
+            }
+        }
+
+        function showResult(div, message, type) {
+            div.textContent = message;
+            div.className = `result ${type}`;
+            div.style.display = 'block';
+        }
+    </script>
+</body>
+</html>
