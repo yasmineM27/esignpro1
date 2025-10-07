@@ -68,26 +68,40 @@ export async function POST(request: NextRequest) {
       try {
         const { supabaseAdmin } = await import('@/lib/supabase');
 
-        // Si caseId ressemble à un token (commence par SECURE_), récupérer l'ID réel
+        // Si caseId ressemble à un token (commence par SECURE_), récupérer l'ID réel et le client_id
+        let actualClientId = clientId;
         if (caseId && caseId.startsWith('SECURE_')) {
           const { data: caseData } = await supabaseAdmin
             .from('insurance_cases')
-            .select('id')
+            .select('id, client_id')
             .eq('secure_token', caseId)
             .single();
 
           if (caseData) {
             realCaseId = caseData.id;
-            console.log('✅ ID réel du cas récupéré:', realCaseId);
+            actualClientId = actualClientId || caseData.client_id;
+            console.log('✅ ID réel du cas récupéré:', realCaseId, 'Client ID:', actualClientId);
+          }
+        } else if (caseId && !actualClientId) {
+          // Si on a un caseId normal mais pas de clientId, le récupérer
+          const { data: caseData } = await supabaseAdmin
+            .from('insurance_cases')
+            .select('client_id')
+            .eq('id', caseId)
+            .single();
+
+          if (caseData) {
+            actualClientId = caseData.client_id;
+            console.log('✅ Client ID récupéré depuis le cas:', actualClientId);
           }
         }
 
         // D'abord essayer avec la nouvelle table client_signatures
-        if (clientId) {
+        if (actualClientId) {
           const { data: clientSignature } = await supabaseAdmin
             .from('client_signatures')
             .select('signature_data, signature_name')
-            .eq('client_id', clientId)
+            .eq('client_id', actualClientId)
             .eq('is_active', true)
             .eq('is_default', true)
             .single();

@@ -109,45 +109,76 @@ export async function GET(request: NextRequest) {
       }, { status: 500 });
     }
 
-    // Format the data for the frontend
-    const formattedClients = clients?.map(client => ({
-      id: client.id,
-      clientCode: client.client_code,
-      firstName: client.users.first_name,
-      lastName: client.users.last_name,
-      fullName: `${client.users.first_name} ${client.users.last_name}`,
-      email: client.users.email,
-      phone: client.users.phone,
-      dateOfBirth: client.date_of_birth,
-      address: client.address,
-      city: client.city,
-      postalCode: client.postal_code,
-      country: client.country,
-      // Handle fallback mode where new columns don't exist
-      hasSignature: fallbackMode ? false : (client.has_signature || false),
-      signatureCount: fallbackMode ? 0 : (client.signature_count || 0),
-      createdAt: client.created_at,
-      updatedAt: client.updated_at,
-      // Additional computed fields
-      displayText: `${client.users.first_name} ${client.users.last_name} (${client.users.email})`,
-      signatureStatus: fallbackMode ? 'Base de données non mise à jour' : (client.has_signature ? 'Signature disponible' : 'Aucune signature')
-    })) || [];
+    // Check signatures manually for each client (since columns might not exist)
+    const clientIds = clients?.map(c => c.id) || [];
+    let signatureMap = new Map();
 
-    // Get additional statistics if requested
-    let stats = null;
-    if (includeSignatureStatus && !fallbackMode) {
-      const { data: statsData, error: statsError } = await supabaseAdmin
-        .from('clients')
-        .select('has_signature')
-        .not('users', 'is', null);
+    if (clientIds.length > 0) {
+      try {
+        const { data: signatures, error: sigError } = await supabaseAdmin
+          .from('client_signatures')
+          .select('client_id, id, is_active, is_default')
+          .in('client_id', clientIds)
+          .eq('is_active', true);
 
-      if (!statsError && statsData) {
-        stats = {
-          total: statsData.length,
-          withSignature: statsData.filter(c => c.has_signature).length,
-          withoutSignature: statsData.filter(c => !c.has_signature).length
-        };
+        if (!sigError && signatures) {
+          signatures.forEach(sig => {
+            if (!signatureMap.has(sig.client_id)) {
+              signatureMap.set(sig.client_id, { count: 0, hasDefault: false });
+            }
+            const current = signatureMap.get(sig.client_id);
+            current.count++;
+            if (sig.is_default) current.hasDefault = true;
+          });
+        }
+      } catch (sigError) {
+        console.warn('⚠️ Erreur récupération signatures:', sigError);
       }
+    }
+
+    // Format the data for the frontend
+    const formattedClients = clients?.map(client => {
+      const signatureInfo = signatureMap.get(client.id) || { count: 0, hasDefault: false };
+      const hasSignature = signatureInfo.count > 0;
+
+      return {
+        id: client.id,
+        clientCode: client.client_code,
+        firstName: client.users.first_name,
+        lastName: client.users.last_name,
+        fullName: `${client.users.first_name} ${client.users.last_name}`,
+        email: client.users.email,
+        phone: client.users.phone,
+        dateOfBirth: client.date_of_birth,
+        address: client.address,
+        city: client.city,
+        postalCode: client.postal_code,
+        country: client.country,
+        // Use real signature data from client_signatures table
+        hasSignature: hasSignature,
+        signatureCount: signatureInfo.count,
+        createdAt: client.created_at,
+        updatedAt: client.updated_at,
+        // Additional computed fields
+        displayText: `${client.users.first_name} ${client.users.last_name} (${client.users.email})`,
+        signatureStatus: hasSignature ? 'Signature disponible' : 'Aucune signature'
+      };
+    }) || [];
+
+    // Apply signature filter if requested
+    let filteredClients = formattedClients;
+    if (onlyWithSignature) {
+      filteredClients = formattedClients.filter(client => client.hasSignature);
+    }
+
+    // Get additional statistics
+    let stats = null;
+    if (includeSignatureStatus) {
+      stats = {
+        total: formattedClients.length,
+        withSignature: formattedClients.filter(c => c.hasSignature).length,
+        withoutSignature: formattedClients.filter(c => !c.hasSignature).length
+      };
     } else if (includeSignatureStatus && fallbackMode) {
       // Fallback stats when new columns don't exist
       stats = {
@@ -161,8 +192,8 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      clients: formattedClients,
-      count: formattedClients.length,
+      clients: filteredClients,
+      count: filteredClients.length,
       stats: stats,
       searchTerm: search,
       fallbackMode: fallbackMode,
