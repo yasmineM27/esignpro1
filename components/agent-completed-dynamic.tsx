@@ -24,6 +24,7 @@ import {
   Clock,
   Star
 } from "lucide-react"
+import { useToast } from "@/hooks/use-toast"
 
 interface CompletedCase {
   id: string
@@ -77,6 +78,7 @@ export function AgentCompletedDynamic() {
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [selectedSignature, setSelectedSignature] = useState<any>(null)
+  const { toast } = useToast()
 
   useEffect(() => {
     loadCompletedCases()
@@ -188,6 +190,61 @@ export function AgentCompletedDynamic() {
 
   const viewSignature = (signature: any) => {
     setSelectedSignature(signature)
+  }
+
+  const downloadCaseDocuments = async (caseItem: CompletedCase) => {
+    try {
+      console.log('📦 Téléchargement documents pour dossier:', caseItem.caseNumber);
+
+      // Afficher un toast de début
+      toast({
+        title: "📦 Préparation des documents",
+        description: `Génération du ZIP avec tous les documents de ${caseItem.client.fullName}...`,
+      });
+
+      // Appeler l'API de téléchargement
+      const response = await fetch('/api/client/download-all-documents', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          clientId: caseItem.client.id
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Erreur lors de la création du ZIP');
+      }
+
+      // Télécharger le fichier ZIP
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = `${caseItem.client.fullName.replace(/[^a-zA-Z0-9]/g, '_')}_${caseItem.caseNumber}_complet.zip`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      toast({
+        title: "✅ Documents téléchargés !",
+        description: `Archive complète de ${caseItem.client.fullName} avec tous les documents et signatures`,
+        variant: "default"
+      });
+
+    } catch (error) {
+      console.error('❌ Erreur téléchargement documents:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
+      toast({
+        title: "❌ Erreur de téléchargement",
+        description: `Impossible de créer l'archive. ${errorMessage}`,
+        variant: "destructive"
+      });
+    }
   }
 
   const filteredCases = cases.filter(caseItem => {
@@ -396,9 +453,10 @@ export function AgentCompletedDynamic() {
                           Voir signature
                         </Button>
 
-                        <Button 
-                          variant="outline" 
+                        <Button
+                          variant="outline"
                           size="sm"
+                          onClick={() => downloadCaseDocuments(caseItem)}
                           className="text-green-600 border-green-200 hover:bg-green-50"
                         >
                           <Download className="h-4 w-4 mr-2" />

@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Direct - Signature Yasmine11</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #dc2626;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+        }
+        .test-section h3 {
+            color: #1f2937;
+            margin-top: 0;
+        }
+        button {
+            background-color: #3b82f6;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        button:hover {
+            background-color: #2563eb;
+        }
+        button:disabled {
+            background-color: #9ca3af;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 5px;
+            display: none;
+        }
+        .success {
+            background-color: #d1fae5;
+            border: 1px solid #10b981;
+            color: #065f46;
+        }
+        .error {
+            background-color: #fee2e2;
+            border: 1px solid #ef4444;
+            color: #991b1b;
+        }
+        .info {
+            background-color: #dbeafe;
+            border: 1px solid #3b82f6;
+            color: #1e40af;
+        }
+        .warning {
+            background-color: #fef3c7;
+            border: 1px solid #f59e0b;
+            color: #92400e;
+        }
+        pre {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 12px;
+            white-space: pre-wrap;
+        }
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #ffffff;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 1s ease-in-out infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .port-input {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f9fafb;
+            border-radius: 8px;
+        }
+        .port-input input {
+            padding: 8px;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Test Direct - Problème Signature Yasmine11</h1>
+        
+        <div class="port-input">
+            <label>
+                <strong>Port du serveur:</strong>
+                <input type="number" id="serverPort" value="3002" min="3000" max="9999">
+                <button onclick="updateServerPort()">Mettre à jour</button>
+            </label>
+            <p><small>Changez le port si votre serveur Next.js fonctionne sur un autre port</small></p>
+        </div>
+
+        <!-- Test 1: Vérification API de base -->
+        <div class="test-section">
+            <h3>1️⃣ Test API de Base</h3>
+            <p>Vérifier si le serveur répond et si l'API fonctionne</p>
+            <button onclick="testBasicAPI()">🌐 Tester Connexion API</button>
+            <div id="result1" class="result"></div>
+        </div>
+
+        <!-- Test 2: Vérification client -->
+        <div class="test-section">
+            <h3>2️⃣ Test Client Yasmine11</h3>
+            <p>Vérifier si le client Yasmine11 existe dans la base de données</p>
+            <button onclick="testClientExists()">👤 Vérifier Client</button>
+            <div id="result2" class="result"></div>
+        </div>
+
+        <!-- Test 3: Vérification signatures -->
+        <div class="test-section">
+            <h3>3️⃣ Test Signatures</h3>
+            <p>Vérifier les signatures disponibles pour Yasmine11</p>
+            <button onclick="testSignatures()">✍️ Vérifier Signatures</button>
+            <div id="result3" class="result"></div>
+        </div>
+
+        <!-- Test 4: Test API debug -->
+        <div class="test-section">
+            <h3>4️⃣ Test API Debug</h3>
+            <p>Utiliser l'API de debug pour identifier le problème exact</p>
+            <button onclick="testDebugAPI()">🧪 Test Debug</button>
+            <div id="result4" class="result"></div>
+        </div>
+
+        <!-- Test 5: Test création dossier -->
+        <div class="test-section">
+            <h3>5️⃣ Test Création Dossier</h3>
+            <p>Tester la création d'un dossier avec signature (API originale)</p>
+            <button onclick="testCreateCase()">📁 Créer Dossier</button>
+            <div id="result5" class="result"></div>
+        </div>
+
+        <!-- Résumé -->
+        <div class="test-section">
+            <h3>📋 Résumé des Tests</h3>
+            <div id="summary" class="result info" style="display: block;">
+                <p>Cliquez sur les boutons ci-dessus pour diagnostiquer le problème étape par étape.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let serverPort = 3002;
+        let testResults = {};
+
+        function updateServerPort() {
+            serverPort = document.getElementById('serverPort').value;
+            console.log('Port mis à jour:', serverPort);
+        }
+
+        function getAPIBase() {
+            return `http://localhost:${serverPort}`;
+        }
+
+        function showResult(resultId, className, title, content) {
+            const resultDiv = document.getElementById(resultId);
+            resultDiv.className = `result ${className}`;
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = `<h4>${title}</h4>${content}`;
+        }
+
+        function updateSummary() {
+            const summary = document.getElementById('summary');
+            const results = Object.entries(testResults);
+            
+            if (results.length === 0) return;
+
+            let summaryHTML = '<h4>📊 Résultats des Tests:</h4><ul>';
+            results.forEach(([test, result]) => {
+                const icon = result.success ? '✅' : '❌';
+                summaryHTML += `<li>${icon} ${test}: ${result.message}</li>`;
+            });
+            summaryHTML += '</ul>';
+
+            // Diagnostic
+            const allPassed = results.every(([, result]) => result.success);
+            if (allPassed) {
+                summaryHTML += '<p><strong>🎉 Tous les tests passent ! Le problème pourrait être ailleurs.</strong></p>';
+            } else {
+                const firstFailure = results.find(([, result]) => !result.success);
+                if (firstFailure) {
+                    summaryHTML += `<p><strong>🔍 Premier échec: ${firstFailure[0]}</strong></p>`;
+                    summaryHTML += `<p>Concentrez-vous sur ce problème en premier.</p>`;
+                }
+            }
+
+            summary.innerHTML = summaryHTML;
+        }
+
+        async function testBasicAPI() {
+            const button = event.target;
+            button.disabled = true;
+            button.innerHTML = '<span class="spinner"></span> Test...';
+
+            try {
+                const response = await fetch(`${getAPIBase()}/api/test/signatures-status`);
+                const data = await response.json();
+
+                if (response.ok) {
+                    testResults['API Base'] = { success: true, message: 'Connexion OK' };
+                    showResult('result1', 'success', '✅ API Accessible', 
+                        `<p>Serveur répond correctement sur le port ${serverPort}</p>
+                         <p>Signatures trouvées: ${data.signatures?.length || 0}</p>`);
+                } else {
+                    testResults['API Base'] = { success: false, message: `Erreur ${response.status}` };
+                    showResult('result1', 'error', '❌ Erreur API', 
+                        `<p>Status: ${response.status}</p><pre>${JSON.stringify(data, null, 2)}</pre>`);
+                }
+            } catch (error) {
+                testResults['API Base'] = { success: false, message: 'Connexion impossible' };
+                showResult('result1', 'error', '❌ Connexion Impossible', 
+                    `<p>Impossible de se connecter au serveur sur le port ${serverPort}</p>
+                     <p>Erreur: ${error.message}</p>
+                     <p><strong>Vérifiez que le serveur Next.js est démarré !</strong></p>`);
+            } finally {
+                button.disabled = false;
+                button.innerHTML = '🌐 Tester Connexion API';
+                updateSummary();
+            }
+        }
+
+        async function testClientExists() {
+            const button = event.target;
+            button.disabled = true;
+            button.innerHTML = '<span class="spinner"></span> Vérification...';
+
+            try {
+                const clientId = '9d51e6fd-c8e4-4898-844c-0dec5efd2900';
+                const response = await fetch(`${getAPIBase()}/api/agent/client-selection?search=yasmine11&includeSignatureStatus=true`);
+                const data = await response.json();
+
+                const yasmine11 = data.clients?.find(c => c.fullName?.includes('Yasmine11'));
+                
+                if (yasmine11) {
+                    testResults['Client Yasmine11'] = { success: true, message: 'Client trouvé' };
+                    showResult('result2', 'success', '✅ Client Trouvé', 
+                        `<p><strong>Nom:</strong> ${yasmine11.fullName}</p>
+                         <p><strong>ID:</strong> ${yasmine11.id}</p>
+                         <p><strong>Email:</strong> ${yasmine11.email}</p>
+                         <p><strong>Signature:</strong> ${yasmine11.hasSignature ? '✅ Oui' : '❌ Non'}</p>
+                         <p><strong>Statut:</strong> ${yasmine11.signatureStatus}</p>`);
+                } else {
+                    testResults['Client Yasmine11'] = { success: false, message: 'Client non trouvé' };
+                    showResult('result2', 'error', '❌ Client Non Trouvé', 
+                        `<p>Yasmine11 n'a pas été trouvée dans les résultats</p>
+                         <pre>${JSON.stringify(data, null, 2)}</pre>`);
+                }
+            } catch (error) {
+                testResults['Client Yasmine11'] = { success: false, message: 'Erreur API' };
+                showResult('result2', 'error', '❌ Erreur', `<p>${error.message}</p>`);
+            } finally {
+                button.disabled = false;
+                button.innerHTML = '👤 Vérifier Client';
+                updateSummary();
+            }
+        }
+
+        async function testSignatures() {
+            const button = event.target;
+            button.disabled = true;
+            button.innerHTML = '<span class="spinner"></span> Vérification...';
+
+            try {
+                const response = await fetch(`${getAPIBase()}/api/test/signatures-status`);
+                const data = await response.json();
+
+                const yasmine11Sigs = data.signatures?.filter(s => 
+                    s.client_name?.includes('Yasmine11') || s.client_id === '9d51e6fd-c8e4-4898-844c-0dec5efd2900'
+                );
+
+                if (yasmine11Sigs && yasmine11Sigs.length > 0) {
+                    testResults['Signatures'] = { success: true, message: `${yasmine11Sigs.length} signature(s)` };
+                    showResult('result3', 'success', '✅ Signatures Trouvées', 
+                        `<p><strong>Nombre:</strong> ${yasmine11Sigs.length}</p>
+                         <pre>${JSON.stringify(yasmine11Sigs, null, 2)}</pre>`);
+                } else {
+                    testResults['Signatures'] = { success: false, message: 'Aucune signature' };
+                    showResult('result3', 'warning', '⚠️ Aucune Signature', 
+                        `<p>Aucune signature trouvée pour Yasmine11</p>
+                         <p>Toutes les signatures:</p>
+                         <pre>${JSON.stringify(data.signatures, null, 2)}</pre>`);
+                }
+            } catch (error) {
+                testResults['Signatures'] = { success: false, message: 'Erreur API' };
+                showResult('result3', 'error', '❌ Erreur', `<p>${error.message}</p>`);
+            } finally {
+                button.disabled = false;
+                button.innerHTML = '✍️ Vérifier Signatures';
+                updateSummary();
+            }
+        }
+
+        async function testDebugAPI() {
+            const button = event.target;
+            button.disabled = true;
+            button.innerHTML = '<span class="spinner"></span> Debug...';
+
+            try {
+                const clientId = '9d51e6fd-c8e4-4898-844c-0dec5efd2900';
+                const response = await fetch(`${getAPIBase()}/api/debug/test-save-signature`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        clientId: clientId,
+                        clientData: { nomPrenom: 'Yasmine11 Massaoudi' }
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    testResults['Debug API'] = { success: true, message: 'Test debug réussi' };
+                    showResult('result4', 'success', '✅ Debug Réussi', 
+                        `<p><strong>Client:</strong> ${data.clientInfo?.name}</p>
+                         <p><strong>Signature:</strong> ${data.signatureInfo?.name}</p>
+                         <p><strong>Actif:</strong> ${data.signatureInfo?.active ? 'Oui' : 'Non'}</p>
+                         <p><strong>Défaut:</strong> ${data.signatureInfo?.default ? 'Oui' : 'Non'}</p>
+                         <pre>${JSON.stringify(data, null, 2)}</pre>`);
+                } else {
+                    testResults['Debug API'] = { success: false, message: data.error };
+                    showResult('result4', 'error', '❌ Debug Échoué', 
+                        `<p><strong>Erreur:</strong> ${data.error}</p>
+                         <pre>${JSON.stringify(data, null, 2)}</pre>`);
+                }
+            } catch (error) {
+                testResults['Debug API'] = { success: false, message: 'Erreur connexion' };
+                showResult('result4', 'error', '❌ Erreur', `<p>${error.message}</p>`);
+            } finally {
+                button.disabled = false;
+                button.innerHTML = '🧪 Test Debug';
+                updateSummary();
+            }
+        }
+
+        async function testCreateCase() {
+            const button = event.target;
+            button.disabled = true;
+            button.innerHTML = '<span class="spinner"></span> Création...';
+
+            try {
+                const response = await fetch(`${getAPIBase()}/api/agent/create-case-with-signature`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        clientId: '9d51e6fd-c8e4-4898-844c-0dec5efd2900',
+                        clientData: {
+                            nomPrenom: 'Yasmine11 Massaoudi',
+                            email: 'yayaaaaa27@gmail.com'
+                        },
+                        autoApplySignature: true,
+                        agentId: '550e8400-e29b-41d4-a716-446655440001'
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    testResults['Création Dossier'] = { success: true, message: 'Dossier créé' };
+                    showResult('result5', 'success', '✅ Dossier Créé', 
+                        `<p><strong>Numéro:</strong> ${data.caseNumber}</p>
+                         <p><strong>ID:</strong> ${data.caseId}</p>
+                         <p><strong>Client:</strong> ${data.clientName}</p>
+                         <p><strong>Signature:</strong> ${data.hasSignature ? 'Appliquée' : 'Non appliquée'}</p>`);
+                } else {
+                    testResults['Création Dossier'] = { success: false, message: data.error };
+                    showResult('result5', 'error', '❌ Échec Création', 
+                        `<p><strong>Erreur:</strong> ${data.error}</p>
+                         <p><strong>Status:</strong> ${response.status}</p>
+                         <pre>${JSON.stringify(data, null, 2)}</pre>`);
+                }
+            } catch (error) {
+                testResults['Création Dossier'] = { success: false, message: 'Erreur connexion' };
+                showResult('result5', 'error', '❌ Erreur', `<p>${error.message}</p>`);
+            } finally {
+                button.disabled = false;
+                button.innerHTML = '📁 Créer Dossier';
+                updateSummary();
+            }
+        }
+    </script>
+</body>
+</html>

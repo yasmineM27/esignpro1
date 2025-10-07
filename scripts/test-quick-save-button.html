@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Bouton Sauvegarde avec Signature</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2563eb;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .client-card {
+            border: 2px solid #10b981;
+            background: #d1fae5;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        .client-info {
+            margin-bottom: 15px;
+        }
+        .client-info strong {
+            color: #065f46;
+        }
+        button {
+            background-color: #10b981;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        button:hover {
+            background-color: #059669;
+        }
+        button:disabled {
+            background-color: #9ca3af;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            display: none;
+        }
+        .success {
+            background-color: #d1fae5;
+            border: 1px solid #10b981;
+            color: #065f46;
+        }
+        .error {
+            background-color: #fee2e2;
+            border: 1px solid #ef4444;
+            color: #991b1b;
+        }
+        .info {
+            background-color: #dbeafe;
+            border: 1px solid #3b82f6;
+            color: #1e40af;
+        }
+        .loading {
+            text-align: center;
+            color: #6b7280;
+        }
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #ffffff;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 1s ease-in-out infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .badge {
+            background: #10b981;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test Bouton "Sauvegarder avec Signature"</h1>
+        
+        <div class="client-card">
+            <h3>👤 Client Test : Yasmine11 Massaoudi</h3>
+            <div class="client-info">
+                <strong>ID:</strong> 9d51e6fd-c8e4-4898-844c-0dec5efd2900
+            </div>
+            <div class="client-info">
+                <strong>Email:</strong> yayaaaaa27@gmail.com
+            </div>
+            <div class="client-info">
+                <strong>Téléphone:</strong> +21653330971
+            </div>
+            <div class="client-info">
+                <strong>Adresse:</strong> Sahline, 2000 Monastir
+            </div>
+            <div class="client-info">
+                <strong>Statut Signature:</strong> <span class="badge">✓ Signature disponible</span>
+            </div>
+            
+            <button id="quickSaveBtn" onclick="testQuickSave()">
+                💾 Sauvegarder avec signature
+            </button>
+            
+            <button onclick="checkPrerequisites()">
+                🔍 Vérifier Prérequis
+            </button>
+        </div>
+
+        <div id="result" class="result"></div>
+    </div>
+
+    <script>
+        const clientData = {
+            clientId: "9d51e6fd-c8e4-4898-844c-0dec5efd2900",
+            clientData: {
+                nomPrenom: "Yasmine11 Massaoudi",
+                email: "yayaaaaa27@gmail.com",
+                telephone: "+21653330971",
+                adresse: "Sahline",
+                npaVille: "2000 Monastir",
+                dateNaissance: "2025-10-01"
+            },
+            autoApplySignature: true,
+            agentId: "550e8400-e29b-41d4-a716-446655440001"
+        };
+
+        async function checkPrerequisites() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.className = 'result info';
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '<div class="loading">🔍 Vérification des prérequis...</div>';
+
+            try {
+                const response = await fetch(`/api/agent/create-case-with-signature?clientId=${clientData.clientId}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `
+                        <h4>✅ Prérequis Vérifiés</h4>
+                        <p><strong>Client:</strong> ${data.client.name}</p>
+                        <p><strong>Email:</strong> ${data.client.email}</p>
+                        <p><strong>Code:</strong> ${data.client.code}</p>
+                        <p><strong>A une signature:</strong> ${data.hasSignature ? '✅ Oui' : '❌ Non'}</p>
+                        ${data.signature ? `
+                            <p><strong>Signature:</strong> ${data.signature.name}</p>
+                            <p><strong>Créée le:</strong> ${new Date(data.signature.createdAt).toLocaleDateString('fr-FR')}</p>
+                        ` : ''}
+                        <p><strong>Peut créer avec signature:</strong> ${data.canCreateWithSignature ? '✅ Oui' : '❌ Non'}</p>
+                    `;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `<h4>❌ Erreur</h4><p>${data.error}</p>`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `<h4>❌ Erreur</h4><p>Erreur de connexion: ${error.message}</p>`;
+            }
+        }
+
+        async function testQuickSave() {
+            const resultDiv = document.getElementById('result');
+            const button = document.getElementById('quickSaveBtn');
+            
+            // Désactiver le bouton et afficher le spinner
+            button.disabled = true;
+            button.innerHTML = '<span class="spinner"></span> Création en cours...';
+            
+            resultDiv.className = 'result info';
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '<div class="loading">📁 Création du dossier avec signature...</div>';
+
+            try {
+                const response = await fetch('/api/agent/create-case-with-signature', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(clientData)
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `
+                        <h4>🎉 Dossier Créé avec Succès !</h4>
+                        <p><strong>Message:</strong> ${data.message}</p>
+                        <p><strong>Numéro de dossier:</strong> ${data.caseNumber}</p>
+                        <p><strong>ID du dossier:</strong> ${data.caseId}</p>
+                        <p><strong>Statut:</strong> ${data.status}</p>
+                        <p><strong>Client:</strong> ${data.clientName}</p>
+                        <p><strong>Signature appliquée:</strong> ${data.hasSignature ? '✅ Oui' : '❌ Non'}</p>
+                        <p><strong>Token sécurisé:</strong> ${data.secureToken}</p>
+                        <p><strong>Créé le:</strong> ${new Date(data.createdAt).toLocaleString('fr-FR')}</p>
+                    `;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `<h4>❌ Erreur de Création</h4><p>${data.error}</p>`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `<h4>❌ Erreur</h4><p>Erreur de connexion: ${error.message}</p>`;
+            } finally {
+                // Réactiver le bouton
+                button.disabled = false;
+                button.innerHTML = '💾 Sauvegarder avec signature';
+            }
+        }
+
+        // Vérifier les prérequis au chargement de la page
+        window.onload = function() {
+            checkPrerequisites();
+        };
+    </script>
+</body>
+</html>

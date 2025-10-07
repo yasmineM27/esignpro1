@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Génération Document Word - Yasmine11</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2563eb;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #374151;
+        }
+        input, textarea, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #d1d5db;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        button {
+            background-color: #2563eb;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background-color: #1d4ed8;
+        }
+        button:disabled {
+            background-color: #9ca3af;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            display: none;
+        }
+        .success {
+            background-color: #d1fae5;
+            border: 1px solid #10b981;
+            color: #065f46;
+        }
+        .error {
+            background-color: #fee2e2;
+            border: 1px solid #ef4444;
+            color: #991b1b;
+        }
+        .info {
+            background-color: #dbeafe;
+            border: 1px solid #3b82f6;
+            color: #1e40af;
+        }
+        .loading {
+            text-align: center;
+            color: #6b7280;
+        }
+        .client-info {
+            background-color: #f3f4f6;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test Génération Document Word - Yasmine11</h1>
+        
+        <div class="client-info">
+            <h3>📋 Informations Client Yasmine11</h3>
+            <p><strong>ID:</strong> 9d51e6fd-c8e4-4898-844c-0dec5efd2900</p>
+            <p><strong>Nom:</strong> Yasmine11 Massaoudi</p>
+            <p><strong>Email:</strong> yayaaaaa27@gmail.com</p>
+            <p><strong>Statut Signature:</strong> ✅ Signature disponible</p>
+        </div>
+
+        <form id="testForm">
+            <div class="form-group">
+                <label for="clientId">Client ID:</label>
+                <input type="text" id="clientId" value="9d51e6fd-c8e4-4898-844c-0dec5efd2900" readonly>
+            </div>
+
+            <div class="form-group">
+                <label for="nomPrenom">Nom et Prénom:</label>
+                <input type="text" id="nomPrenom" value="Yasmine11 Massaoudi" required>
+            </div>
+
+            <div class="form-group">
+                <label for="adresse">Adresse:</label>
+                <input type="text" id="adresse" value="Sahline, 2000 Monastir" required>
+            </div>
+
+            <div class="form-group">
+                <label for="npaVille">NPA et Ville:</label>
+                <input type="text" id="npaVille" value="2000 Monastir" required>
+            </div>
+
+            <div class="form-group">
+                <label for="telephone">Téléphone:</label>
+                <input type="text" id="telephone" value="+21653330971">
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email:</label>
+                <input type="email" id="email" value="yayaaaaa27@gmail.com">
+            </div>
+
+            <div class="form-group">
+                <label for="includeSignature">Inclure la signature:</label>
+                <select id="includeSignature">
+                    <option value="true">✅ Oui - Inclure la signature</option>
+                    <option value="false">❌ Non - Sans signature</option>
+                </select>
+            </div>
+
+            <button type="button" onclick="testWordGeneration()">
+                📄 Générer Document Word avec Signature
+            </button>
+            
+            <button type="button" onclick="checkSignatureStatus()">
+                🔍 Vérifier Statut Signature
+            </button>
+        </form>
+
+        <div id="result" class="result"></div>
+    </div>
+
+    <script>
+        async function checkSignatureStatus() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.className = 'result info';
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '<div class="loading">🔍 Vérification du statut de signature...</div>';
+
+            try {
+                const response = await fetch('/api/agent/client-selection?search=yasmine11&includeSignatureStatus=true');
+                const data = await response.json();
+
+                if (data.success && data.clients.length > 0) {
+                    const client = data.clients[0];
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `
+                        <h4>✅ Statut Signature Yasmine11</h4>
+                        <p><strong>Nom:</strong> ${client.fullName}</p>
+                        <p><strong>Has Signature:</strong> ${client.hasSignature ? '✅ Oui' : '❌ Non'}</p>
+                        <p><strong>Nombre de signatures:</strong> ${client.signatureCount}</p>
+                        <p><strong>Statut:</strong> ${client.signatureStatus}</p>
+                        <p><strong>Email:</strong> ${client.email}</p>
+                    `;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = '<h4>❌ Client non trouvé</h4><p>Yasmine11 n\'a pas été trouvée dans la base de données.</p>';
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `<h4>❌ Erreur</h4><p>Erreur lors de la vérification: ${error.message}</p>`;
+            }
+        }
+
+        async function testWordGeneration() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.className = 'result info';
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '<div class="loading">📄 Génération du document Word en cours...</div>';
+
+            const clientData = {
+                nomPrenom: document.getElementById('nomPrenom').value,
+                adresse: document.getElementById('adresse').value,
+                npaVille: document.getElementById('npaVille').value,
+                telephone: document.getElementById('telephone').value,
+                email: document.getElementById('email').value
+            };
+
+            const requestData = {
+                clientId: document.getElementById('clientId').value,
+                clientData: clientData,
+                includeSignature: document.getElementById('includeSignature').value === 'true'
+            };
+
+            try {
+                const response = await fetch('/api/generate-word-document', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestData)
+                });
+
+                if (response.ok) {
+                    // Si la réponse est un fichier, le télécharger
+                    const contentType = response.headers.get('content-type');
+                    if (contentType && contentType.includes('application/vnd.openxmlformats-officedocument.wordprocessingml.document')) {
+                        const blob = await response.blob();
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `Document_Yasmine11_${new Date().getTime()}.docx`;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        window.URL.revokeObjectURL(url);
+
+                        resultDiv.className = 'result success';
+                        resultDiv.innerHTML = `
+                            <h4>✅ Document généré avec succès !</h4>
+                            <p>Le document Word avec signature a été téléchargé.</p>
+                            <p><strong>Signature incluse:</strong> ${requestData.includeSignature ? '✅ Oui' : '❌ Non'}</p>
+                            <p><strong>Client:</strong> ${clientData.nomPrenom}</p>
+                        `;
+                    } else {
+                        // Réponse JSON (probablement une erreur)
+                        const data = await response.json();
+                        if (data.success) {
+                            resultDiv.className = 'result success';
+                            resultDiv.innerHTML = `<h4>✅ ${data.message}</h4>`;
+                        } else {
+                            resultDiv.className = 'result error';
+                            resultDiv.innerHTML = `<h4>❌ Erreur</h4><p>${data.message || 'Erreur inconnue'}</p>`;
+                        }
+                    }
+                } else {
+                    const errorData = await response.json();
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `<h4>❌ Erreur HTTP ${response.status}</h4><p>${errorData.message || errorData.error || 'Erreur inconnue'}</p>`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `<h4>❌ Erreur</h4><p>Erreur lors de la génération: ${error.message}</p>`;
+            }
+        }
+
+        // Vérifier le statut au chargement de la page
+        window.onload = function() {
+            checkSignatureStatus();
+        };
+    </script>
+</body>
+</html>

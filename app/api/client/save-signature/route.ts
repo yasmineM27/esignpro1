@@ -8,12 +8,71 @@ export async function POST(request: NextRequest) {
 
     console.log('💾 Sauvegarde signature:', { token, caseId, signatureLength: signature?.length });
 
+    // Validation des paramètres requis
     if (!token || !signature || !caseId) {
       return NextResponse.json({
         success: false,
         error: 'Token, signature et caseId requis'
       }, { status: 400 });
     }
+
+    // Validation robuste de la signature côté serveur
+    if (typeof signature !== 'string' || signature.trim() === '') {
+      console.warn('⚠️ Signature vide reçue');
+      return NextResponse.json({
+        success: false,
+        error: 'Signature vide - veuillez dessiner votre signature'
+      }, { status: 400 });
+    }
+
+    // Vérifier que la signature est un data URL valide
+    if (!signature.startsWith('data:image/')) {
+      console.warn('⚠️ Format de signature invalide');
+      return NextResponse.json({
+        success: false,
+        error: 'Format de signature invalide'
+      }, { status: 400 });
+    }
+
+    // Vérifier que la signature contient suffisamment de données (plus tolérant)
+    if (signature.length < 50) {
+      console.warn('⚠️ Signature trop courte:', signature.length);
+      return NextResponse.json({
+        success: false,
+        error: 'Signature incomplète - veuillez dessiner une signature plus détaillée'
+      }, { status: 400 });
+    }
+
+    // Vérifier que ce n'est pas juste un canvas vide (validation plus précise)
+    const emptyCanvasSignatures = [
+      'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==', // Canvas 1x1 transparent
+      'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAASwAAADICAYAAABS39xVAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAALEgAACxIB0t1+/AAAADh0RVh0U29mdHdhcmUAbWF0cGxvdGxpYiB2ZXJzaW9uMy4xLjMsIGh0dHA6Ly9tYXRwbG90bGliLm9yZy+AADFEAAAASElEQVR4nO3BMQEAAADCoPVPbQhfoAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA+BsYAAAFY5jQAAAAASUVORK5CYII=' // Canvas blanc standard
+    ];
+
+    // Vérifier seulement les signatures exactement identiques aux canvas vides connus
+    if (emptyCanvasSignatures.includes(signature)) {
+      console.warn('⚠️ Canvas vide détecté (signature exacte)');
+      return NextResponse.json({
+        success: false,
+        error: 'Canvas vide - veuillez dessiner votre signature avant de valider'
+      }, { status: 400 });
+    }
+
+    // Vérifier que ce n'est pas juste le header sans données
+    if (signature === 'data:image/png;base64,') {
+      console.warn('⚠️ Signature sans données base64');
+      return NextResponse.json({
+        success: false,
+        error: 'Signature vide - aucune donnée détectée'
+      }, { status: 400 });
+    }
+
+    console.log('✅ Signature validée côté serveur:', {
+      length: signature.length,
+      format: signature.substring(0, 50) + '...',
+      isValidDataUrl: signature.startsWith('data:image/'),
+      hasBase64Data: signature.includes('base64,') && signature.split('base64,')[1]?.length > 10
+    });
 
     // Vérifier que le dossier existe (utiliser seulement le token)
     const { data: caseData, error: caseError } = await supabaseAdmin
@@ -42,20 +101,63 @@ export async function POST(request: NextRequest) {
       }, { status: 404 });
     }
 
-    // Sauvegarder la signature (utiliser l'ID réel du dossier)
+    // Préparer les informations client
+    const clientName = `${caseData.clients.users.first_name} ${caseData.clients.users.last_name}`;
+    const clientId = caseData.client_id;
+
+    // 1. SAUVEGARDER LA SIGNATURE DANS SUPABASE STORAGE
+    let storageSignaturePath = null;
+    let storageError = null;
+
+    try {
+      // Convertir la signature base64 en buffer
+      const base64Data = signature.split(',')[1]; // Enlever le préfixe data:image/png;base64,
+      const signatureBuffer = Buffer.from(base64Data, 'base64');
+
+      // Générer un nom de fichier unique pour la signature
+      const timestamp = Date.now();
+      const signatureFileName = `${clientId}/signatures/signature_${caseData.case_number}_${timestamp}.png`;
+
+      console.log('📁 Upload signature vers Supabase Storage:', signatureFileName);
+
+      // Upload vers le bucket client-documents
+      const { data: uploadData, error: uploadError } = await supabaseAdmin.storage
+        .from('client-documents')
+        .upload(signatureFileName, signatureBuffer, {
+          contentType: 'image/png',
+          upsert: false
+        });
+
+      if (uploadError) {
+        console.warn('⚠️ Erreur upload Supabase Storage:', uploadError);
+        storageError = uploadError;
+      } else {
+        storageSignaturePath = uploadData.path;
+        console.log('✅ Signature uploadée vers Storage:', storageSignaturePath);
+      }
+    } catch (uploadErr) {
+      console.warn('⚠️ Erreur traitement upload signature:', uploadErr);
+      storageError = uploadErr;
+    }
+
+    // 2. SAUVEGARDER LA SIGNATURE EN BASE DE DONNÉES (avec référence au storage)
     const realCaseId = caseData.id;
+    const signatureMetadata = {
+      timestamp: new Date().toISOString(),
+      client_name: clientName,
+      case_number: caseData.case_number,
+      ip_address: request.headers.get('x-forwarded-for') || 'unknown',
+      user_agent: request.headers.get('user-agent') || 'unknown',
+      storage_path: storageSignaturePath, // Référence au fichier dans Storage
+      storage_error: storageError ? storageError.message : null
+    };
+
     const { data: signatureData, error: signatureError } = await supabaseAdmin
       .from('signatures')
       .insert([{
         case_id: realCaseId,
-        signature_data: signature,
-        signature_metadata: {
-          timestamp: new Date().toISOString(),
-          client_name: `${caseData.clients.users.first_name} ${caseData.clients.users.last_name}`,
-          case_number: caseData.case_number,
-          ip_address: request.headers.get('x-forwarded-for') || 'unknown',
-          user_agent: request.headers.get('user-agent') || 'unknown'
-        },
+        signature_data: signature, // Garder aussi en base64 pour compatibilité
+        signature_metadata: signatureMetadata,
         ip_address: request.headers.get('x-forwarded-for') || null,
         user_agent: request.headers.get('user-agent') || null,
         signed_at: new Date().toISOString(),
@@ -114,7 +216,7 @@ export async function POST(request: NextRequest) {
 
     // Envoyer un email de notification à l'agent
     const agentEmail = 'yasminemassaoudi27@gmail.com';
-    const clientName = `${caseData.clients.users.first_name} ${caseData.clients.users.last_name}`;
+    // clientName est déjà déclaré plus haut (ligne 105)
 
     try {
       const emailResult = await sendEmail({

@@ -156,22 +156,61 @@ export async function POST(request: NextRequest) {
         .eq('is_default', true);
     }
 
-    // Préparer les métadonnées
+    // 1. SAUVEGARDER LA SIGNATURE DANS SUPABASE STORAGE
+    const clientName = `${clientData.users.first_name} ${clientData.users.last_name}`;
+    let storageSignaturePath = null;
+    let storageError = null;
+
+    try {
+      // Convertir la signature base64 en buffer
+      const base64Data = signatureData.split(',')[1]; // Enlever le préfixe data:image/png;base64,
+      const signatureBuffer = Buffer.from(base64Data, 'base64');
+
+      // Générer un nom de fichier unique pour la signature
+      const timestamp = Date.now();
+      const safeSignatureName = signatureName.replace(/[^a-zA-Z0-9]/g, '_');
+      const signatureFileName = `${clientId}/signatures/${safeSignatureName}_${timestamp}.png`;
+
+      console.log('📁 Upload signature client vers Supabase Storage:', signatureFileName);
+
+      // Upload vers le bucket client-documents
+      const { data: uploadData, error: uploadError } = await supabaseAdmin.storage
+        .from('client-documents')
+        .upload(signatureFileName, signatureBuffer, {
+          contentType: 'image/png',
+          upsert: false
+        });
+
+      if (uploadError) {
+        console.warn('⚠️ Erreur upload Supabase Storage:', uploadError);
+        storageError = uploadError;
+      } else {
+        storageSignaturePath = uploadData.path;
+        console.log('✅ Signature client uploadée vers Storage:', storageSignaturePath);
+      }
+    } catch (uploadErr) {
+      console.warn('⚠️ Erreur traitement upload signature client:', uploadErr);
+      storageError = uploadErr;
+    }
+
+    // 2. PRÉPARER LES MÉTADONNÉES (avec référence au storage)
     const signatureMetadata = {
       ...metadata,
       timestamp: new Date().toISOString(),
-      client_name: `${clientData.users.first_name} ${clientData.users.last_name}`,
+      client_name: clientName,
       case_id: caseId || null,
       ip_address: request.headers.get('x-forwarded-for') || 'unknown',
-      user_agent: request.headers.get('user-agent') || 'unknown'
+      user_agent: request.headers.get('user-agent') || 'unknown',
+      storage_path: storageSignaturePath, // Référence au fichier dans Storage
+      storage_error: storageError ? storageError.message : null
     };
 
-    // Sauvegarder la signature
+    // 3. SAUVEGARDER LA SIGNATURE EN BASE DE DONNÉES
     const { data: signatureResult, error: signatureError } = await supabaseAdmin
       .from('client_signatures')
       .insert([{
         client_id: clientId,
-        signature_data: signatureData,
+        signature_data: signatureData, // Garder aussi en base64 pour compatibilité
         signature_name: signatureName,
         signature_metadata: signatureMetadata,
         is_active: true,

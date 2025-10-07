@@ -17,6 +17,7 @@ import { AgentAnalyticsDynamic } from "@/components/agent-analytics-dynamic"
 import { AgentSettingsDynamic } from "@/components/agent-settings-dynamic"
 import { AgentDocumentsHistory } from "@/components/agent-documents-history"
 import { DemoWorkflow } from "@/components/demo-workflow"
+import AgentCasesManagement from "@/components/agent-cases-management"
 
 export default function AgentDashboard() {
   const [activeTab, setActiveTab] = useState("new-case")
@@ -39,6 +40,8 @@ export default function AgentDashboard() {
         )
       case "clients":
         return <AgentClientsDynamic />
+      case "cases":
+        return <AgentCasesManagement />
       case "pending":
         return <AgentPendingDynamic />
       case "completed":

@@ -7,14 +7,14 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { 
-  Search, 
-  User, 
-  Plus, 
-  Check, 
-  AlertCircle, 
-  Mail, 
-  Phone, 
+import {
+  Search,
+  User,
+  Plus,
+  Check,
+  AlertCircle,
+  Mail,
+  Phone,
   MapPin,
   Calendar,
   FileSignature,
@@ -143,6 +143,8 @@ export function ClientSelection({
     })
   }
 
+
+
   // Handle new client creation
   const handleNewClient = () => {
     setSelectedClient(null)
@@ -254,15 +256,17 @@ export function ClientSelection({
                     {clients.map((client) => (
                       <div
                         key={client.id}
-                        className={`p-3 border rounded-lg cursor-pointer transition-all ${
+                        className={`p-3 border rounded-lg transition-all ${
                           client.hasSignature
-                            ? 'border-green-200 bg-green-50 hover:bg-green-100 hover:border-green-300'
-                            : 'border-gray-200 hover:bg-gray-50 hover:border-gray-300'
+                            ? 'border-green-200 bg-green-50'
+                            : 'border-gray-200'
                         }`}
-                        onClick={() => handleClientSelect(client)}
                       >
                         <div className="flex items-start justify-between">
-                          <div className="flex-1">
+                          <div
+                            className="flex-1 cursor-pointer hover:bg-green-100 hover:border-green-300 rounded p-2 -m-2"
+                            onClick={() => handleClientSelect(client)}
+                          >
                             <div className="flex items-center gap-2 mb-1">
                               <User className={`h-4 w-4 ${client.hasSignature ? 'text-green-600' : 'text-gray-400'}`} />
                               <span className="font-medium">{client.fullName}</span>
@@ -297,12 +301,15 @@ export function ClientSelection({
                               )}
                             </div>
                           </div>
-                          <div className="text-right text-xs text-gray-500">
-                            <div>Code: {client.clientCode}</div>
-                            <div className="flex items-center gap-1 mt-1">
-                              <Calendar className="h-3 w-3" />
-                              {new Date(client.createdAt).toLocaleDateString('fr-CH')}
+                          <div className="flex flex-col items-end gap-2">
+                            <div className="text-right text-xs text-gray-500">
+                              <div>Code: {client.clientCode}</div>
+                              <div className="flex items-center gap-1 mt-1">
+                                <Calendar className="h-3 w-3" />
+                                {new Date(client.createdAt).toLocaleDateString('fr-CH')}
+                              </div>
                             </div>
+
                           </div>
                         </div>
                       </div>

@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
-import { Plus, Trash2, FileText, Mail, Eye, Users, FileSignature } from "lucide-react"
+import { Plus, Trash2, FileText, Mail, Eye, Users, FileSignature, Save } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { DocumentPreview } from "./document-preview"
 import { ClientSelection } from "./client-selection"
@@ -95,6 +95,7 @@ export function ClientForm() {
 
   const [isLoading, setIsLoading] = useState(false)
   const [isDownloadingWord, setIsDownloadingWord] = useState(false)
+  const [isSavingWithSignature, setIsSavingWithSignature] = useState(false)
   const [generatedDocument, setGeneratedDocument] = useState<string | null>(null)
   const [clientId, setClientId] = useState<string | null>(null)
   const [secureToken, setSecureToken] = useState<string | null>(null)
@@ -249,6 +250,117 @@ export function ClientForm() {
       })
     } finally {
       setIsDownloadingWord(false)
+    }
+  }
+
+  // Handle save with signature for existing clients
+  const handleSaveWithSignature = async () => {
+    if (!selectedClient || !selectedClient.hasSignature) {
+      toast({
+        title: "❌ Aucune signature disponible",
+        description: `Ce client n'a pas de signature enregistrée.`,
+        variant: "destructive"
+      })
+      return
+    }
+
+    setIsSavingWithSignature(true)
+
+    try {
+      console.log('🔄 Début sauvegarde avec signature:', {
+        clientId: selectedClient.id,
+        clientName: selectedClient.fullName,
+        hasSignature: selectedClient.hasSignature,
+        formData: {
+          nom: clientData.nom,
+          prenom: clientData.prenom,
+          email: clientData.email
+        }
+      })
+
+      // TEMPORAIRE: Utiliser l'API de debug pour identifier le problème
+      console.log('🧪 Utilisation de l\'API de debug...');
+      const response = await fetch('/api/debug/test-save-signature', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          clientId: selectedClient.id,
+          clientData: {
+            nomPrenom: clientData.nomPrenom || `${clientData.nom} ${clientData.prenom}`.trim(),
+            email: clientData.email || selectedClient.email,
+            telephone: clientData.telephone || selectedClient.phone || '',
+            adresse: clientData.adresse || selectedClient.address || '',
+            npaVille: clientData.npaVille || `${clientData.npa} ${clientData.ville}`.trim() || `${selectedClient.postalCode || ''} ${selectedClient.city || ''}`.trim(),
+            dateNaissance: clientData.dateNaissance || selectedClient.dateOfBirth || ''
+          },
+          autoApplySignature: true,
+          agentId: '550e8400-e29b-41d4-a716-446655440001'
+        })
+      })
+
+      const data = await response.json()
+
+      console.log('📥 Réponse API:', {
+        status: response.status,
+        success: data.success,
+        error: data.error,
+        data: data
+      })
+
+      if (data.success) {
+        toast({
+          title: "✅ Dossier sauvegardé avec signature !",
+          description: `Dossier ${data.caseNumber} créé pour ${selectedClient.fullName} avec signature automatiquement appliquée.`,
+          variant: "default"
+        })
+
+        // Mettre à jour les IDs pour les autres actions
+        setClientId(data.caseId)
+        setSecureToken(data.secureToken)
+
+        // Optionnel : rediriger vers le générateur de templates
+        setCurrentCaseId(data.caseId)
+        setShowMultiTemplateGenerator(true)
+
+      } else {
+        // Afficher l'erreur détaillée dans la console ET dans le toast
+        console.error('❌ ERREUR API DÉTAILLÉE:', {
+          status: response.status,
+          error: data.error,
+          fullResponse: data
+        });
+
+        const detailedError = `${data.error || 'Erreur inconnue'} (Status: ${response.status})`;
+
+        toast({
+          title: "❌ Erreur de sauvegarde détaillée",
+          description: detailedError,
+          variant: "destructive"
+        });
+
+        throw new Error(detailedError)
+      }
+    } catch (error) {
+      console.error('💥 ERREUR COMPLÈTE sauvegarde avec signature:', {
+        error: error,
+        message: error instanceof Error ? error.message : 'Erreur inconnue',
+        stack: error instanceof Error ? error.stack : undefined,
+        clientId: selectedClient?.id,
+        clientName: selectedClient?.fullName
+      })
+
+      const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue'
+
+      // Toast avec plus de détails
+      toast({
+        title: "❌ Erreur de sauvegarde",
+        description: `Client: ${selectedClient?.fullName || 'Inconnu'} - ${errorMessage}`,
+        variant: "destructive"
+      })
+    } finally {
+      setIsSavingWithSignature(false)
     }
   }
 
@@ -859,6 +971,29 @@ export function ClientForm() {
           <Eye className="h-4 w-4 mr-2" />
           {showPreview ? "Masquer Aperçu" : "Aperçu Document"}
         </Button>
+
+        {/* Bouton pour sauvegarder avec signature (clients existants uniquement) */}
+        {selectedClient && selectedClient.hasSignature && (
+          <Button
+            type="button"
+            size="lg"
+            onClick={handleSaveWithSignature}
+            disabled={isSavingWithSignature || !clientData.nom || !clientData.prenom}
+            className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-8 py-3"
+          >
+            {isSavingWithSignature ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                Sauvegarde...
+              </>
+            ) : (
+              <>
+                <Save className="h-4 w-4 mr-2" />
+                Sauvegarder avec Signature
+              </>
+            )}
+          </Button>
+        )}
 
         {/* Bouton principal pour générer et envoyer */}
         <Button

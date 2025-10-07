@@ -180,31 +180,52 @@ export default function AgentClientsPage() {
 
   const downloadClientDocuments = async (client: Client) => {
     try {
-      const response = await fetch(`/api/agent/export-client-documents?clientId=${client.id}`)
-      
-      if (response.ok) {
-        const blob = await response.blob()
-        const url = window.URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = `Documents_${client.fullName.replace(/\s+/g, '_')}.zip`
-        document.body.appendChild(a)
-        a.click()
-        window.URL.revokeObjectURL(url)
-        document.body.removeChild(a)
-        
-        toast({
-          title: "Téléchargement démarré",
-          description: `Documents de ${client.fullName}`,
+      toast({
+        title: "📦 Préparation de l'archive complète",
+        description: `Création du ZIP avec tous les documents et signatures de ${client.fullName}...`,
+        variant: "default"
+      })
+
+      // Appeler la nouvelle API pour créer et télécharger le ZIP complet
+      const response = await fetch('/api/client/download-all-documents', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          clientId: client.id
         })
-      } else {
-        throw new Error('Erreur téléchargement')
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Erreur lors de la création du ZIP')
       }
+
+      // Télécharger le fichier ZIP
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.style.display = 'none'
+      a.href = url
+      a.download = `${client.fullName.replace(/[^a-zA-Z0-9]/g, '_')}_documents_complets.zip`
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+
+      toast({
+        title: "✅ Archive téléchargée !",
+        description: `Archive complète de ${client.fullName} avec tous les documents et signatures`,
+        variant: "default"
+      })
+
     } catch (error) {
       console.error('Erreur téléchargement documents:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue'
       toast({
-        title: "Erreur",
-        description: "Erreur lors du téléchargement des documents",
+        title: "❌ Erreur de téléchargement",
+        description: `Impossible de créer l'archive pour ${client.fullName}. ${errorMessage}`,
         variant: "destructive"
       })
     }

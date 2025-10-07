@@ -129,12 +129,59 @@ export default function SignaturePage() {
   };
 
   const handleSignDocument = async () => {
+    // Validation robuste de la signature
     if (!signature || !caseData) {
-      alert('Veuillez signer le document avant de continuer');
+      alert('❌ Signature requise\n\nVeuillez signer le document avant de continuer.');
       return;
     }
 
+    // Vérifier que la signature n'est pas vide ou juste un canvas blanc
+    if (signature.trim() === '' || signature === 'data:image/png;base64,') {
+      alert('❌ Signature vide\n\nVeuillez dessiner votre signature dans la zone prévue à cet effet.');
+      return;
+    }
+
+    // Vérifier que la signature contient suffisamment de données (plus tolérant)
+    if (signature.length < 50) {
+      alert('❌ Signature incomplète\n\nVotre signature semble trop simple. Veuillez dessiner une signature plus détaillée.');
+      return;
+    }
+
+    // Vérifier que la signature n'est pas juste un canvas blanc (détection plus souple)
+    const canvas = canvasRef.current;
+    if (canvas) {
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imageData.data;
+
+        // Compter les pixels non-blancs (plus tolérant)
+        let nonWhitePixelCount = 0;
+        for (let i = 0; i < data.length; i += 4) {
+          // Vérifier RGB avec une tolérance (pas exactement blanc)
+          if (data[i] < 250 || data[i + 1] < 250 || data[i + 2] < 250) {
+            nonWhitePixelCount++;
+          }
+        }
+
+        // Exiger au moins 10 pixels non-blancs (signature minimale)
+        if (nonWhitePixelCount < 10) {
+          console.log('⚠️ Pixels non-blancs détectés:', nonWhitePixelCount);
+          alert('❌ Signature trop légère\n\nVotre signature semble trop légère ou incomplète. Veuillez appuyer plus fort ou dessiner une signature plus visible.');
+          return;
+        }
+
+        console.log('✅ Signature valide détectée:', nonWhitePixelCount, 'pixels non-blancs');
+      }
+    }
+
     try {
+      console.log('📝 Envoi signature valide:', {
+        signatureLength: signature.length,
+        caseId: caseData.id,
+        token: token
+      });
+
       const response = await fetch('/api/client/save-signature', {
         method: 'POST',
         headers: {
@@ -148,10 +195,10 @@ export default function SignaturePage() {
       });
 
       const result = await response.json();
-      
+
       if (result.success) {
         setCurrentStep(3);
-        alert('✅ Document signé avec succès !');
+        alert('✅ Document signé avec succès !\n\nVotre dossier est maintenant complet.');
       } else {
         alert('❌ Erreur lors de la signature: ' + result.error);
       }

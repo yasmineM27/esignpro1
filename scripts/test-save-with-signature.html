@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Sauvegarde avec Signature</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2563eb;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #10b981;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        button:hover {
+            background-color: #059669;
+        }
+        button:disabled {
+            background-color: #9ca3af;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            display: none;
+        }
+        .success {
+            background-color: #d1fae5;
+            border: 1px solid #10b981;
+            color: #065f46;
+        }
+        .error {
+            background-color: #fee2e2;
+            border: 1px solid #ef4444;
+            color: #991b1b;
+        }
+        .info {
+            background-color: #dbeafe;
+            border: 1px solid #3b82f6;
+            color: #1e40af;
+        }
+        .loading {
+            text-align: center;
+            color: #6b7280;
+        }
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #ffffff;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 1s ease-in-out infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        pre {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test Sauvegarde avec Signature</h1>
+        
+        <div class="form-group">
+            <label for="clientId">Client ID:</label>
+            <input type="text" id="clientId" value="9d51e6fd-c8e4-4898-844c-0dec5efd2900" placeholder="UUID du client">
+        </div>
+        
+        <div class="form-group">
+            <label for="nomPrenom">Nom Prénom:</label>
+            <input type="text" id="nomPrenom" value="Yasmine11 Massaoudi" placeholder="Nom complet">
+        </div>
+        
+        <div class="form-group">
+            <label for="email">Email:</label>
+            <input type="email" id="email" value="yayaaaaa27@gmail.com" placeholder="Email">
+        </div>
+        
+        <div class="form-group">
+            <label for="telephone">Téléphone:</label>
+            <input type="text" id="telephone" value="+21653330971" placeholder="Téléphone">
+        </div>
+        
+        <div class="form-group">
+            <label for="adresse">Adresse:</label>
+            <input type="text" id="adresse" value="Sahline" placeholder="Adresse">
+        </div>
+        
+        <div class="form-group">
+            <label for="npaVille">NPA Ville:</label>
+            <input type="text" id="npaVille" value="2000 Monastir" placeholder="Code postal et ville">
+        </div>
+        
+        <div class="form-group">
+            <label for="dateNaissance">Date de Naissance:</label>
+            <input type="date" id="dateNaissance" value="2025-10-01">
+        </div>
+        
+        <button id="testBtn" onclick="testSaveWithSignature()">
+            💾 Tester Sauvegarde avec Signature
+        </button>
+        
+        <button onclick="checkPrerequisites()">
+            🔍 Vérifier Prérequis
+        </button>
+
+        <div id="result" class="result"></div>
+    </div>
+
+    <script>
+        async function checkPrerequisites() {
+            const resultDiv = document.getElementById('result');
+            const clientId = document.getElementById('clientId').value;
+            
+            resultDiv.className = 'result info';
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '<div class="loading">🔍 Vérification des prérequis...</div>';
+
+            try {
+                const response = await fetch(`/api/agent/create-case-with-signature?clientId=${clientId}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `
+                        <h4>✅ Prérequis Vérifiés</h4>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `
+                        <h4>❌ Erreur</h4>
+                        <p><strong>Message:</strong> ${data.error}</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `<h4>❌ Erreur</h4><p>Erreur de connexion: ${error.message}</p>`;
+            }
+        }
+
+        async function testSaveWithSignature() {
+            const resultDiv = document.getElementById('result');
+            const button = document.getElementById('testBtn');
+            
+            // Récupérer les données du formulaire
+            const clientData = {
+                clientId: document.getElementById('clientId').value,
+                clientData: {
+                    nomPrenom: document.getElementById('nomPrenom').value,
+                    email: document.getElementById('email').value,
+                    telephone: document.getElementById('telephone').value,
+                    adresse: document.getElementById('adresse').value,
+                    npaVille: document.getElementById('npaVille').value,
+                    dateNaissance: document.getElementById('dateNaissance').value
+                },
+                autoApplySignature: true,
+                agentId: "550e8400-e29b-41d4-a716-446655440001"
+            };
+            
+            // Désactiver le bouton et afficher le spinner
+            button.disabled = true;
+            button.innerHTML = '<span class="spinner"></span> Test en cours...';
+            
+            resultDiv.className = 'result info';
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '<div class="loading">📁 Test de sauvegarde avec signature...</div>';
+
+            console.log('🔄 Données envoyées:', clientData);
+
+            try {
+                const response = await fetch('/api/agent/create-case-with-signature', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(clientData)
+                });
+
+                const data = await response.json();
+                
+                console.log('📥 Réponse reçue:', {
+                    status: response.status,
+                    data: data
+                });
+
+                if (data.success) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `
+                        <h4>🎉 Sauvegarde Réussie !</h4>
+                        <p><strong>Message:</strong> ${data.message}</p>
+                        <p><strong>Numéro de dossier:</strong> ${data.caseNumber}</p>
+                        <p><strong>ID du dossier:</strong> ${data.caseId}</p>
+                        <p><strong>Statut:</strong> ${data.status}</p>
+                        <p><strong>Client:</strong> ${data.clientName}</p>
+                        <p><strong>Signature appliquée:</strong> ${data.hasSignature ? '✅ Oui' : '❌ Non'}</p>
+                        <h5>Réponse complète:</h5>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `
+                        <h4>❌ Erreur de Sauvegarde</h4>
+                        <p><strong>Message:</strong> ${data.error}</p>
+                        <p><strong>Status HTTP:</strong> ${response.status}</p>
+                        <h5>Réponse complète:</h5>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                }
+            } catch (error) {
+                console.error('❌ Erreur:', error);
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `
+                    <h4>❌ Erreur</h4>
+                    <p>Erreur de connexion: ${error.message}</p>
+                    <p>Vérifiez que le serveur est démarré sur le bon port.</p>
+                `;
+            } finally {
+                // Réactiver le bouton
+                button.disabled = false;
+                button.innerHTML = '💾 Tester Sauvegarde avec Signature';
+            }
+        }
+
+        // Vérifier les prérequis au chargement de la page
+        window.onload = function() {
+            checkPrerequisites();
+        };
+    </script>
+</body>
+</html>
