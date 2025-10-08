@@ -126,18 +126,38 @@ export function AgentClientsDynamic() {
 
   const viewSignature = async (client: Client) => {
     try {
-      // Récupérer la signature du client
-      const response = await fetch(`/api/agent/signatures?caseId=${client.caseId}`)
+      // Récupérer la signature du client depuis client_signatures
+      const response = await fetch(`/api/agent/client-signatures?clientId=${client.id}`)
       const data = await response.json()
 
       if (data.success && data.signatures.length > 0) {
-        setSelectedSignature(data.signatures[0])
+        // Utiliser la signature par défaut ou la première
+        const signature = data.defaultSignature || data.signatures[0]
+        console.log('📝 Données signature récupérées:', signature)
+        setSelectedSignature({
+          signatureData: signature.signature_data,
+          signedAt: signature.created_at,
+          isValid: signature.is_active,
+          signatureName: signature.signature_name || 'Signature principale'
+        })
+        // La modal s'ouvre automatiquement quand selectedSignature n'est pas null
       } else {
-        alert('Aucune signature trouvée pour ce client')
+        // Ne pas ouvrir la modal, juste afficher le toast
+        toast({
+          title: "❌ Aucune signature",
+          description: "Ce client n'a pas encore de signature enregistrée.",
+          variant: "destructive"
+        })
+        return // Sortir de la fonction sans ouvrir la modal
       }
     } catch (error) {
       console.error('Erreur récupération signature:', error)
-      alert('Erreur lors de la récupération de la signature')
+      toast({
+        title: "❌ Erreur",
+        description: "Erreur lors de la récupération de la signature",
+        variant: "destructive"
+      })
+      return // Sortir de la fonction sans ouvrir la modal
     }
   }
 
@@ -424,12 +444,20 @@ export function AgentClientsDynamic() {
                           </div>
                         )}
 
-                        {client.hasSignature && (
-                          <div className="flex items-center space-x-2 text-green-600">
-                            <CheckCircle className="h-4 w-4" />
-                            <span className="text-sm font-medium">Document signé</span>
-                          </div>
-                        )}
+                        {/* Statut signature - TOUJOURS VISIBLE */}
+                        <div className="flex items-center space-x-2">
+                          {client.hasSignature ? (
+                            <div className="flex items-center space-x-2 text-green-600">
+                              <CheckCircle className="h-4 w-4" />
+                              <span className="text-sm font-medium">✅ Signature enregistrée</span>
+                            </div>
+                          ) : (
+                            <div className="flex items-center space-x-2 text-orange-600">
+                              <AlertCircle className="h-4 w-4" />
+                              <span className="text-sm font-medium">⏳ En attente de signature</span>
+                            </div>
+                          )}
+                        </div>
                       </div>
 
                       <div className="flex flex-col space-y-2">
@@ -441,17 +469,19 @@ export function AgentClientsDynamic() {
                           <Eye className="h-4 w-4 mr-2" />
                           Voir portail
                         </Button>
-                        {client.hasSignature && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => viewSignature(client)}
-                            className="text-blue-600 border-blue-200 hover:bg-blue-50"
-                          >
-                            <Signature className="h-4 w-4 mr-2" />
-                            Voir signature
-                          </Button>
-                        )}
+                        {/* Bouton signature - TOUJOURS VISIBLE */}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => viewSignature(client)}
+                          className={client.hasSignature
+                            ? "text-green-600 border-green-200 hover:bg-green-50"
+                            : "text-gray-600 border-gray-200 hover:bg-gray-50"
+                          }
+                        >
+                          <Signature className="h-4 w-4 mr-2" />
+                          {client.hasSignature ? "Voir signature" : "Pas de signature"}
+                        </Button>
 
                         <Button
                           variant="outline"

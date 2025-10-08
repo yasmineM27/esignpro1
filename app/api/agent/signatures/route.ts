@@ -6,10 +6,11 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status') || 'signed'; // signed, validated, rejected
     const caseId = searchParams.get('caseId'); // Pour rechercher par dossier spécifique
+    const clientId = searchParams.get('clientId'); // Pour rechercher par client spécifique
     const limit = parseInt(searchParams.get('limit') || '50');
     const offset = parseInt(searchParams.get('offset') || '0');
 
-    console.log('🔍 Récupération signatures agent:', { status, caseId, limit, offset });
+    console.log('🔍 Récupération signatures agent:', { status, caseId, clientId, limit, offset });
 
     // Récupérer les signatures avec les données des dossiers
     let query = supabaseAdmin
@@ -48,6 +49,11 @@ export async function GET(request: NextRequest) {
     // Filtrer par dossier spécifique si demandé
     if (caseId) {
       query = query.eq('case_id', caseId);
+    }
+
+    // Filtrer par client spécifique si demandé
+    if (clientId) {
+      query = query.eq('insurance_cases.client_id', clientId);
     }
 
     query = query

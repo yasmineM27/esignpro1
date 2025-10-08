@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
-import ClientPortalUpload from '@/components/client-portal-upload';
+import EnhancedClientPortal from '@/components/enhanced-client-portal';
 
 // Types
 interface ClientPortalPageProps {
@@ -128,141 +128,7 @@ async function getDocuments(token: string): Promise<DocumentData[]> {
   }
 }
 
-// Fonctions utilitaires pour l'interface dynamique
-function getStatusDisplay(status: string) {
-  const statusMap: Record<string, { label: string; color: string; bgColor: string }> = {
-    'draft': { label: '📝 Brouillon', color: '#6b7280', bgColor: '#f3f4f6' },
-    'email_sent': { label: '📧 En attente de documents', color: '#f59e0b', bgColor: '#fef3c7' },
-    'documents_uploaded': { label: '📄 Documents reçus', color: '#3b82f6', bgColor: '#dbeafe' },
-    'signed': { label: '✍️ Signé', color: '#10b981', bgColor: '#d1fae5' },
-    'completed': { label: '✅ Terminé', color: '#059669', bgColor: '#a7f3d0' },
-    'validated': { label: '🎯 Validé', color: '#059669', bgColor: '#a7f3d0' },
-    'archived': { label: '📦 Archivé', color: '#6b7280', bgColor: '#f3f4f6' }
-  };
-  return statusMap[status] || { label: status, color: '#6b7280', bgColor: '#f3f4f6' };
-}
-
-function getProgressPercentage(status: string, documentsCount: number): number {
-  if (status === 'completed' || status === 'validated') return 100;
-  if (status === 'signed') return 90;
-  if (status === 'documents_uploaded' && documentsCount > 0) return 70;
-  if (status === 'email_sent') return 30;
-  if (status === 'draft') return 10;
-  return 10;
-}
-
-// Composant client pour l'interface
-function ClientPortalInterface({ caseData, documents, token }: {
-  caseData: CaseData;
-  documents: DocumentData[];
-  token: string;
-}) {
-  return (
-    <div className="min-h-screen bg-slate-50 p-4 sm:p-6 lg:p-8 font-sans">
-      <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden">
-        {/* Header - Responsive */}
-        <div className="bg-gradient-to-br from-blue-500 to-purple-600 text-white p-6 sm:p-8 text-center">
-          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-2">
-            Bonjour {caseData.client_name}
-          </h1>
-          <p className="text-sm sm:text-base opacity-90 mb-0">
-            Finalisation de votre dossier
-          </p>
-        </div>
-
-        {/* Informations du dossier - DYNAMIQUE - Responsive */}
-        <div className="p-4 sm:p-6 lg:p-8">
-          <div className="bg-slate-100 p-4 sm:p-6 rounded-lg mb-6 sm:mb-8">
-            <h2 className="text-lg sm:text-xl font-semibold text-slate-700 mb-4">
-              📋 Informations du dossier
-            </h2>
-
-            {/* Barre de progression dynamique - Responsive */}
-            <div className="mb-6">
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-sm font-semibold text-gray-700">Progression du dossier</span>
-                <span className="text-sm text-gray-500">
-                  {getProgressPercentage(caseData.status, documents.length)}%
-                </span>
-              </div>
-              <div className="bg-white/80 rounded-full h-2 overflow-hidden">
-                <div
-                  className="bg-emerald-500 h-full rounded-full transition-all duration-500 ease-out"
-                  style={{ width: `${getProgressPercentage(caseData.status, documents.length)}%` }}
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              <div className="bg-white p-3 rounded-lg">
-                <div className="font-semibold text-gray-700 text-sm mb-1">Numéro de dossier:</div>
-                <div className="text-blue-600 font-medium">{caseData.case_number}</div>
-              </div>
-              <div className="bg-white p-3 rounded-lg">
-                <div className="font-semibold text-gray-700 text-sm mb-1">Compagnie d'assurance:</div>
-                <div className="text-gray-800">{caseData.insurance_company || 'Non spécifiée'}</div>
-              </div>
-              <div className="bg-white p-3 rounded-lg">
-                <div className="font-semibold text-gray-700 text-sm mb-1">Numéro de police:</div>
-                <div className="text-gray-800">{caseData.policy_number || 'Non spécifié'}</div>
-              </div>
-              {caseData.policy_type && (
-                <div className="bg-white p-3 rounded-lg">
-                  <div className="font-semibold text-gray-700 text-sm mb-1">Type de police:</div>
-                  <div className="text-gray-800">{caseData.policy_type}</div>
-                </div>
-              )}
-              {caseData.termination_date && (
-                <div className="bg-white p-3 rounded-lg">
-                  <div className="font-semibold text-gray-700 text-sm mb-1">Date de résiliation:</div>
-                  <div className="text-red-600 font-medium">
-                    {new Date(caseData.termination_date).toLocaleDateString('fr-FR')}
-                  </div>
-                </div>
-              )}
-              <div className="bg-white p-3 rounded-lg">
-                <div className="font-semibold text-gray-700 text-sm mb-1">Date de création:</div>
-                <div className="text-gray-500">
-                  {new Date(caseData.created_at).toLocaleDateString('fr-FR')}
-                </div>
-              </div>
-              <div className="bg-white p-3 rounded-lg">
-                <div className="font-semibold text-gray-700 text-sm mb-1">Statut:</div>
-                <span
-                  className="inline-block px-2 py-1 rounded text-sm font-semibold"
-                  style={{
-                    color: getStatusDisplay(caseData.status).color,
-                    backgroundColor: getStatusDisplay(caseData.status).bgColor
-                  }}
-                >
-                  {getStatusDisplay(caseData.status).label}
-                </span>
-              </div>
-              <div>
-                <strong>Documents uploadés:</strong><br />
-                <span style={{
-                  color: documents.length > 0 ? '#10b981' : '#f59e0b',
-                  fontWeight: 'bold'
-                }}>
-                  {documents.length} document(s)
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Section upload de documents */}
-          <div style={{ marginBottom: '30px' }}>
-            <h2 style={{ margin: '0 0 20px 0', fontSize: '20px', color: '#334155' }}>
-              📁 Upload de documents
-            </h2>
-
-            <ClientPortalUpload token={token} initialDocuments={documents} />
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
+// Ancienne interface supprimée - remplacée par EnhancedClientPortal
 
 // Composant principal de la page
 export default async function ClientPortalPage({ params }: ClientPortalPageProps) {
@@ -294,20 +160,20 @@ export default async function ClientPortalPage({ params }: ClientPortalPageProps
 
   return (
     <Suspense fallback={
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
         height: '100vh',
         fontSize: '18px'
       }}>
         🔄 Chargement de votre dossier...
       </div>
     }>
-      <ClientPortalInterface 
-        caseData={caseData} 
-        documents={documents} 
-        token={token} 
+      <EnhancedClientPortal
+        caseData={caseData}
+        documents={documents}
+        token={token}
       />
     </Suspense>
   );

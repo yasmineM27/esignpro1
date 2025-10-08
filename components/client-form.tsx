@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { Plus, Trash2, FileText, Mail, Eye, Users, FileSignature, Save } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import { DocumentPreview } from "./document-preview"
+
 import { ClientSelection } from "./client-selection"
 import { MultiTemplateGenerator } from "./multi-template-generator"
 
@@ -99,7 +99,7 @@ export function ClientForm() {
   const [generatedDocument, setGeneratedDocument] = useState<string | null>(null)
   const [clientId, setClientId] = useState<string | null>(null)
   const [secureToken, setSecureToken] = useState<string | null>(null)
-  const [showPreview, setShowPreview] = useState(false)
+
   const [showMultiTemplateGenerator, setShowMultiTemplateGenerator] = useState(false)
 
   // Handle client selection
@@ -278,25 +278,23 @@ export function ClientForm() {
         }
       })
 
-      // TEMPORAIRE: Utiliser l'API de debug pour identifier le problème
-      console.log('🧪 Utilisation de l\'API de debug...');
-      const response = await fetch('/api/debug/test-save-signature', {
+      // Créer un vrai dossier avec signature via l'API qui fonctionne
+      console.log('📁 Création dossier réel avec signature via client-selection...');
+      const response = await fetch('/api/agent/client-selection', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
+          action: 'create_case_for_client',
           clientId: selectedClient.id,
-          clientData: {
-            nomPrenom: clientData.nomPrenom || `${clientData.nom} ${clientData.prenom}`.trim(),
-            email: clientData.email || selectedClient.email,
-            telephone: clientData.telephone || selectedClient.phone || '',
-            adresse: clientData.adresse || selectedClient.address || '',
-            npaVille: clientData.npaVille || `${clientData.npa} ${clientData.ville}`.trim() || `${selectedClient.postalCode || ''} ${selectedClient.city || ''}`.trim(),
-            dateNaissance: clientData.dateNaissance || selectedClient.dateOfBirth || ''
-          },
-          autoApplySignature: true,
-          agentId: '550e8400-e29b-41d4-a716-446655440001'
+          caseData: {
+            insuranceCompany: clientData.compagnieAssurance || 'Non spécifiée',
+            policyNumber: clientData.numeroPolice || `POL-${Date.now()}`,
+            policyType: 'resiliation',
+            terminationDate: clientData.dateResiliation || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+            reasonForTermination: clientData.motifResiliation || 'Demande client'
+          }
         })
       })
 
@@ -312,12 +310,18 @@ export function ClientForm() {
       if (data.success) {
         toast({
           title: "✅ Dossier sauvegardé avec signature !",
-          description: `Dossier ${data.caseNumber} créé pour ${selectedClient.fullName} avec signature automatiquement appliquée.`,
+          description: `Dossier créé pour ${selectedClient.fullName} avec signature automatiquement appliquée.`,
           variant: "default"
         })
 
         // Mettre à jour les IDs pour les autres actions
-        setClientId(data.caseId)
+        setCurrentCaseId(data.caseId)
+
+        console.log('🎉 Dossier créé avec succès:', {
+          caseId: data.caseId,
+          message: data.message,
+          success: data.success
+        })
         setSecureToken(data.secureToken)
 
         // Optionnel : rediriger vers le générateur de templates
@@ -476,7 +480,7 @@ export function ClientForm() {
 
           // Simuler une réponse réussie et continuer
           setSecureToken(generateResult.secureToken);
-          setShowPreview(true);
+
           return;
         } else {
           throw new Error(`Erreur envoi email: ${errorText}`);
@@ -496,7 +500,7 @@ export function ClientForm() {
           });
 
           setSecureToken(generateResult.secureToken);
-          setShowPreview(true);
+
           return;
         }
 
@@ -515,8 +519,7 @@ export function ClientForm() {
           : `Document généré et email envoyé à ${clientData.email}. Lien portail: ${emailResult.portalLink}`,
       });
 
-      // Show preview
-      setShowPreview(true);
+
       }
 
     } catch (error) {
@@ -554,7 +557,7 @@ export function ClientForm() {
     setGeneratedDocument(null)
     setClientId(null)
     setSecureToken(null)
-    setShowPreview(false)
+
   }
 
   // Show client selection first
@@ -613,26 +616,7 @@ export function ClientForm() {
     )
   }
 
-  if (showPreview && generatedDocument) {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h3 className="text-xl font-semibold text-gray-900">Document Généré</h3>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => setShowPreview(false)}>
-              <Eye className="h-4 w-4 mr-2" />
-              Retour au Formulaire
-            </Button>
-            <Button variant="outline" onClick={resetForm}>
-              Nouveau Dossier
-            </Button>
-          </div>
-        </div>
 
-        <DocumentPreview content={generatedDocument} clientId={secureToken || clientId || ""} />
-      </div>
-    )
-  }
 
   return (
     <div className="space-y-6">
@@ -960,17 +944,7 @@ export function ClientForm() {
         </Button>
 
         {/* Bouton pour prévisualiser */}
-        <Button
-          type="button"
-          size="lg"
-          onClick={() => setShowPreview(!showPreview)}
-          disabled={!clientData.nom || !clientData.prenom}
-          variant="outline"
-          className="border-blue-200 text-blue-600 hover:bg-blue-50 px-8 py-3"
-        >
-          <Eye className="h-4 w-4 mr-2" />
-          {showPreview ? "Masquer Aperçu" : "Aperçu Document"}
-        </Button>
+
 
         {/* Bouton pour sauvegarder avec signature (clients existants uniquement) */}
         {selectedClient && selectedClient.hasSignature && (

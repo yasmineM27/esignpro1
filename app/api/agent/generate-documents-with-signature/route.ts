@@ -91,37 +91,57 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 3. Récupérer les templates
-    const { data: templates, error: templatesError } = await supabaseAdmin
-      .from('document_templates')
-      .select('*')
-      .in('id', templateIds)
-      .eq('is_active', true);
+    // 3. Récupérer les templates depuis l'API interne (pas de DB)
+    console.log('📋 Récupération templates depuis API interne...');
 
-    if (templatesError || !templates || templates.length === 0) {
-      console.error('❌ Templates non trouvés:', templatesError);
+    // Utiliser l'API templates qui fonctionne déjà
+    const templatesResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001'}/api/agent/templates`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!templatesResponse.ok) {
+      console.error('❌ Erreur récupération templates API');
       return NextResponse.json({
         success: false,
-        error: 'Templates non trouvés'
+        error: 'Erreur récupération templates'
+      }, { status: 500 });
+    }
+
+    const templatesData = await templatesResponse.json();
+
+    if (!templatesData.success || !templatesData.templates) {
+      console.error('❌ Templates API non disponibles');
+      return NextResponse.json({
+        success: false,
+        error: 'Templates non disponibles'
       }, { status: 404 });
     }
 
-    // 4. Créer une session de génération
-    const { data: sessionData, error: sessionError } = await supabaseAdmin
-      .from('document_generation_sessions')
-      .insert([{
-        client_id: clientId,
-        agent_id: agentId,
-        session_name: sessionName || `Génération ${new Date().toLocaleString('fr-CH')}`,
-        templates_used: templateIds,
-        status: 'in_progress'
-      }])
-      .select()
-      .single();
+    // Filtrer les templates demandés
+    const templates = templatesData.templates.filter(t => templateIds.includes(t.id));
 
-    if (sessionError) {
-      console.warn('⚠️ Erreur création session:', sessionError);
+    if (templates.length === 0) {
+      console.error('❌ Aucun template trouvé pour les IDs:', templateIds);
+      return NextResponse.json({
+        success: false,
+        error: 'Templates demandés non trouvés'
+      }, { status: 404 });
     }
+
+    console.log(`✅ ${templates.length} templates récupérés:`, templates.map(t => t.name));
+
+    // 4. Préparer la session de génération (sans DB)
+    const sessionId = `session-${Date.now()}`;
+    const sessionName = sessionName || `Génération ${new Date().toLocaleString('fr-CH')}`;
+
+    console.log('📝 Session de génération:', {
+      sessionId,
+      sessionName,
+      templatesCount: templates.length
+    });
 
     // 5. Préparer les variables pour le remplissage des templates
     const clientName = `${caseData.clients.users.first_name} ${caseData.clients.users.last_name}`;
