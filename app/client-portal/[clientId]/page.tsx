@@ -159,22 +159,18 @@ export default async function ClientPortalPage({ params }: ClientPortalPageProps
   console.log(`✅ ${documents.length} document(s) récupéré(s)`);
 
   return (
-    <Suspense fallback={
-      <div style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        height: '100vh',
-        fontSize: '18px'
-      }}>
-        🔄 Chargement de votre dossier...
-      </div>
-    }>
-      <EnhancedClientPortal
-        caseData={caseData}
-        documents={documents}
-        token={token}
-      />
-    </Suspense>
+    <div className="min-h-screen bg-gray-50">
+      <Suspense fallback={
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+        </div>
+      }>
+        <EnhancedClientPortal
+          token={token}
+          caseData={caseData}
+          documents={documents}
+        />
+      </Suspense>
+    </div>
   );
 }

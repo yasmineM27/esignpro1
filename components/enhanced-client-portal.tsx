@@ -111,6 +111,7 @@ export default function EnhancedClientPortal({ caseData, documents, token }: Enh
   const [cguAccepted, setCguAccepted] = useState(false);
   const [showCguModal, setShowCguModal] = useState(false);
   const [showSignatureModal, setShowSignatureModal] = useState(false);
+  const [showViewSignatureModal, setShowViewSignatureModal] = useState(false);
   const [isEditingSignature, setIsEditingSignature] = useState(false);
 
   // Récupérer la signature du client au chargement
@@ -121,14 +122,28 @@ export default function EnhancedClientPortal({ caseData, documents, token }: Enh
   const fetchClientSignature = async () => {
     try {
       setLoading(true);
+      console.log('🔍 Récupération signature pour token:', token);
       const response = await fetch(`/api/client-portal/signature?token=${token}`);
       const data = await response.json();
-      
+
+      console.log('📝 Réponse API signature:', data);
+
       if (data.success && data.signature) {
+        console.log('✅ Signature trouvée:', {
+          id: data.signature.id,
+          signature_name: data.signature.signature_name,
+          created_at: data.signature.created_at,
+          signature_data_length: data.signature.signature_data?.length || 0,
+          signature_data_preview: data.signature.signature_data?.substring(0, 50) + '...'
+        });
         setClientSignature(data.signature);
+      } else {
+        console.log('ℹ️ Aucune signature trouvée');
+        setClientSignature(null);
       }
     } catch (error) {
-      console.error('Erreur récupération signature:', error);
+      console.error('❌ Erreur récupération signature:', error);
+      setClientSignature(null);
     } finally {
       setLoading(false);
     }
@@ -211,6 +226,12 @@ export default function EnhancedClientPortal({ caseData, documents, token }: Enh
     setShowSignatureModal(false);
     setIsEditingSignature(false);
     setCguAccepted(false);
+  };
+
+  const handleViewSignature = () => {
+    if (clientSignature) {
+      setShowViewSignatureModal(true);
+    }
   };
 
   const getStatusDisplay = (status: string) => {
@@ -357,19 +378,35 @@ export default function EnhancedClientPortal({ caseData, documents, token }: Enh
                 ) : clientSignature ? (
                   <div className="space-y-4">
                     <div className="text-center">
-                      <div className="bg-gray-50 p-4 rounded-lg mb-4">
-                        <img 
-                          src={clientSignature.signature_data} 
-                          alt="Ma signature" 
+                      <div className="bg-gray-50 p-4 rounded-lg mb-4 cursor-pointer hover:bg-gray-100 transition-colors" onClick={handleViewSignature}>
+                        <img
+                          src={clientSignature.signature_data}
+                          alt="Ma signature"
                           className="max-w-full h-20 mx-auto"
+                          onError={(e) => {
+                            console.error('Erreur chargement image signature:', e);
+                            e.currentTarget.style.display = 'none';
+                          }}
                         />
                       </div>
                       <p className="text-sm text-gray-600">
                         Signature créée le {new Date(clientSignature.created_at).toLocaleDateString('fr-FR')}
                       </p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Cliquez sur la signature pour l'agrandir
+                      </p>
                     </div>
-                    
+
                     <div className="flex space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleViewSignature}
+                        className="flex-1"
+                      >
+                        <Signature className="h-4 w-4 mr-1" />
+                        Voir
+                      </Button>
                       <Button
                         variant="outline"
                         size="sm"
@@ -481,7 +518,7 @@ export default function EnhancedClientPortal({ caseData, documents, token }: Enh
           </DialogContent>
         </Dialog>
 
-        {/* Modal Signature */}
+        {/* Modal Signature Canvas */}
         <Dialog open={showSignatureModal} onOpenChange={handleCancelSignature}>
           <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
@@ -495,6 +532,72 @@ export default function EnhancedClientPortal({ caseData, documents, token }: Enh
               existingSignature={isEditingSignature ? clientSignature : null}
               isEditing={isEditingSignature}
             />
+          </DialogContent>
+        </Dialog>
+
+        {/* Modal Affichage Signature */}
+        <Dialog open={showViewSignatureModal} onOpenChange={setShowViewSignatureModal}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center">
+                <Signature className="h-5 w-5 mr-2" />
+                Ma Signature Électronique
+              </DialogTitle>
+            </DialogHeader>
+            {clientSignature && (
+              <div className="space-y-4">
+                <div className="text-center">
+                  <div className="bg-white border-2 border-gray-200 rounded-lg p-6 mb-4">
+                    <img
+                      src={clientSignature.signature_data}
+                      alt="Ma signature"
+                      className="max-w-full max-h-40 mx-auto"
+                      style={{
+                        filter: 'none',
+                        imageRendering: 'crisp-edges'
+                      }}
+                      onError={(e) => {
+                        console.error('Erreur chargement signature:', clientSignature.signature_data);
+                        e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48dGV4dCB4PSI1MCUiIHk9IjUwJSIgZG9taW5hbnQtYmFzZWxpbmU9Im1pZGRsZSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iIzk5OTk5OSI+U2lnbmF0dXJlIG5vbiBkaXNwb25pYmxlPC90ZXh0Pjwvc3ZnPg==';
+                      }}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <p className="font-medium text-gray-900">
+                      {clientSignature.signature_name || 'Ma signature'}
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      Créée le {new Date(clientSignature.created_at).toLocaleDateString('fr-FR', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </p>
+                    <p className="text-sm text-green-600 font-medium">
+                      ✓ Signature valide et active
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex justify-center space-x-3">
+                  <Button
+                    variant="outline"
+                    onClick={handleEditSignature}
+                  >
+                    <Edit className="h-4 w-4 mr-2" />
+                    Modifier
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowViewSignatureModal(false)}
+                  >
+                    Fermer
+                  </Button>
+                </div>
+              </div>
+            )}
           </DialogContent>
         </Dialog>
       </div>

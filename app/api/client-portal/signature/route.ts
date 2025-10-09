@@ -49,7 +49,18 @@ export async function GET(request: NextRequest) {
       }, { status: 500 });
     }
 
-    console.log(`✅ Signature ${signature ? 'trouvée' : 'non trouvée'} pour client ${caseData.client_id}`);
+    if (signature) {
+      console.log(`✅ Signature trouvée pour client ${caseData.client_id}:`, {
+        id: signature.id,
+        signature_name: signature.signature_name,
+        created_at: signature.created_at,
+        is_active: signature.is_active,
+        signature_data_length: signature.signature_data?.length || 0,
+        signature_data_preview: signature.signature_data?.substring(0, 50) + '...'
+      });
+    } else {
+      console.log(`✅ Signature non trouvée pour client ${caseData.client_id}`);
+    }
 
     return NextResponse.json({
       success: true,
