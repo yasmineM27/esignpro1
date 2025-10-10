@@ -114,13 +114,52 @@ export async function POST(request: NextRequest) {
       .update({ is_active: false })
       .eq('client_id', clientId);
 
+    // Récupérer les informations du client pour créer un nom descriptif
+    const { data: clientInfo, error: clientError } = await supabaseAdmin
+      .from('clients')
+      .select(`
+        id,
+        client_code,
+        users!inner(
+          first_name,
+          last_name,
+          email
+        )
+      `)
+      .eq('id', clientId)
+      .single();
+
+    if (clientError || !clientInfo) {
+      console.error('❌ Erreur récupération client:', clientError);
+      return NextResponse.json({
+        success: false,
+        error: 'Client non trouvé'
+      }, { status: 404 });
+    }
+
+    // Créer un nom de signature descriptif
+    const clientName = `${clientInfo.users.first_name} ${clientInfo.users.last_name}`;
+    const timestamp = new Date().toISOString().slice(0, 19).replace(/[-:]/g, '').replace('T', '_');
+    const defaultSignatureName = `Signature de ${clientName} (${caseData.case_number})`;
+    const finalSignatureName = signatureName && signatureName.trim() !== 'Ma signature'
+      ? `${signatureName} - ${clientName}`
+      : defaultSignatureName;
+
     // Créer la nouvelle signature
     const { data: newSignature, error: createError } = await supabaseAdmin
       .from('client_signatures')
       .insert([{
         client_id: clientId,
         signature_data: signatureData,
-        signature_name: signatureName || 'Signature principale',
+        signature_name: finalSignatureName,
+        signature_metadata: {
+          client_name: clientName,
+          client_email: clientInfo.users.email,
+          case_number: caseData.case_number,
+          created_via: 'client_portal',
+          original_name: signatureName || 'Ma signature',
+          timestamp: timestamp
+        },
         is_active: true,
         is_default: true
       }])
@@ -280,12 +319,51 @@ export async function PUT(request: NextRequest) {
       }, { status: 404 });
     }
 
+    // Récupérer les informations du client pour créer un nom descriptif
+    const { data: clientInfo, error: clientError } = await supabaseAdmin
+      .from('clients')
+      .select(`
+        id,
+        client_code,
+        users!inner(
+          first_name,
+          last_name,
+          email
+        )
+      `)
+      .eq('id', caseData.client_id)
+      .single();
+
+    if (clientError || !clientInfo) {
+      console.error('❌ Erreur récupération client:', clientError);
+      return NextResponse.json({
+        success: false,
+        error: 'Client non trouvé'
+      }, { status: 404 });
+    }
+
+    // Créer un nom de signature descriptif pour la mise à jour
+    const clientName = `${clientInfo.users.first_name} ${clientInfo.users.last_name}`;
+    const timestamp = new Date().toISOString().slice(0, 19).replace(/[-:]/g, '').replace('T', '_');
+    const defaultSignatureName = `Signature de ${clientName} (${caseData.case_number})`;
+    const finalSignatureName = signatureName && signatureName.trim() !== 'Ma signature'
+      ? `${signatureName} - ${clientName}`
+      : defaultSignatureName;
+
     // Mettre à jour la signature
     const { data: updatedSignature, error: updateError } = await supabaseAdmin
       .from('client_signatures')
       .update({
         signature_data: signatureData,
-        signature_name: signatureName || 'Signature principale',
+        signature_name: finalSignatureName,
+        signature_metadata: {
+          client_name: clientName,
+          client_email: clientInfo.users.email,
+          case_number: caseData.case_number,
+          updated_via: 'client_portal',
+          original_name: signatureName || 'Ma signature',
+          last_updated: timestamp
+        },
         updated_at: new Date().toISOString()
       })
       .eq('id', signatureId)
