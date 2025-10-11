@@ -8,6 +8,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { ArrowLeft, Users, FileText, Settings, BarChart3, Shield, Mail, Clock } from "lucide-react"
 import { AdminAgents } from "@/components/admin-agents"
+import { AdminUsers } from "@/components/admin-users"
 import { AdminTemplates } from "@/components/admin-templates"
 import { AdminReports } from "@/components/admin-reports"
 import { AdminSecurity } from "@/components/admin-security"
@@ -119,6 +120,15 @@ export default function AdminDashboard() {
           >
             <Users className="mr-2 h-4 w-4" />
             Agents
+          </Button>
+          <Button
+            variant={activeSection === "users" ? "default" : "ghost"}
+            size="sm"
+            onClick={() => setActiveSection("users")}
+            className={activeSection === "users" ? "bg-gray-900 text-white" : ""}
+          >
+            <Users className="mr-2 h-4 w-4" />
+            Utilisateurs
           </Button>
           <Button
             variant={activeSection === "templates" ? "default" : "ghost"}
@@ -287,6 +297,7 @@ export default function AdminDashboard() {
         )}
 
         {activeSection === "agents" && <AdminAgents />}
+        {activeSection === "users" && <AdminUsers />}
         {activeSection === "templates" && <AdminTemplates />}
         {activeSection === "reports" && <AdminReports />}
         {activeSection === "security" && <AdminSecurity />}

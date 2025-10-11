@@ -18,25 +18,17 @@ interface LoginCredentials {
   password: string
 }
 
-// Mock user database
-const mockUsers = {
-  "yasminemassaoudi27@gmail.com": {
-    password: "admin123",
-    role: "admin",
-    name: "Yasmine Massaoudi",
-    redirectTo: "/admin"
-  },
-  "wael.hamda@esignpro.ch": {
-    password: "agent123",
-    role: "agent",
-    name: "Wael Hamda",
-    redirectTo: "/agent"
-  },
-  "test@esignpro.ch": {
-    password: "test123",
-    role: "agent",
-    name: "Test User",
-    redirectTo: "/agent"
+// Fonction pour déterminer la redirection selon le rôle
+const getRedirectPath = (role: string) => {
+  switch (role) {
+    case 'admin':
+      return '/admin'
+    case 'agent':
+      return '/agent'
+    case 'client':
+      return '/client-dashboard'
+    default:
+      return '/dashboard'
   }
 }
 
@@ -55,25 +47,55 @@ export default function LoginPage() {
     setIsLoading(true)
     setError("")
 
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    try {
+      // Essayer d'abord avec l'API user-login (plus flexible)
+      let response = await fetch('/api/auth/user-login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: credentials.email,
+          password: credentials.password
+        }),
+      })
 
-    const user = mockUsers[credentials.email as keyof typeof mockUsers]
+      let data = await response.json()
 
-    if (!user || user.password !== credentials.password) {
-      setError("Email ou mot de passe incorrect")
+      // Si échec avec user-login, essayer avec agent-login
+      if (!data.success && credentials.email.includes('@esignpro.ch')) {
+        response = await fetch('/api/auth/agent-login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email: credentials.email,
+            password: credentials.password
+          }),
+        })
+        data = await response.json()
+      }
+
+      if (data.success) {
+        // Connexion réussie
+        toast({
+          title: "Connexion réussie",
+          description: `Bienvenue ${data.user.first_name} ${data.user.last_name}`,
+        })
+
+        // Redirection selon le rôle
+        const redirectPath = getRedirectPath(data.user.role)
+        router.push(redirectPath)
+      } else {
+        setError(data.error || 'Email ou mot de passe incorrect')
+      }
+    } catch (error) {
+      console.error('Erreur connexion:', error)
+      setError('Erreur de connexion au serveur')
+    } finally {
       setIsLoading(false)
-      return
     }
-
-    // Successful login
-    toast({
-      title: "Connexion réussie",
-      description: `Bienvenue ${user.name}`,
-    })
-
-    // Redirect based on user role
-    router.push(user.redirectTo)
   }
 
   const handleQuickLogin = (email: string, password: string) => {
@@ -185,12 +207,12 @@ export default function LoginPage() {
                   type="button"
                   variant="outline"
                   className="w-full bg-transparent text-left justify-start"
-                  onClick={() => handleQuickLogin("yasminemassaoudi27@gmail.com", "admin123")}
+                  onClick={() => handleQuickLogin("waelha@gmail.com", "admin123")}
                 >
                   <Shield className="mr-2 h-4 w-4 text-red-600" />
                   <div className="text-left">
                     <div className="font-medium">Administrateur</div>
-                    <div className="text-xs text-gray-500">yasminemassaoudi27@gmail.com</div>
+                    <div className="text-xs text-gray-500">waelha@gmail.com</div>
                   </div>
                 </Button>
 
@@ -198,12 +220,25 @@ export default function LoginPage() {
                   type="button"
                   variant="outline"
                   className="w-full bg-transparent text-left justify-start"
-                  onClick={() => handleQuickLogin("wael.hamda@esignpro.ch", "agent123")}
+                  onClick={() => handleQuickLogin("agent.test@esignpro.ch", "test123")}
                 >
                   <Mail className="mr-2 h-4 w-4 text-blue-600" />
                   <div className="text-left">
                     <div className="font-medium">Agent</div>
-                    <div className="text-xs text-gray-500">wael.hamda@esignpro.ch</div>
+                    <div className="text-xs text-gray-500">agent.test@esignpro.ch</div>
+                  </div>
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full bg-transparent text-left justify-start"
+                  onClick={() => handleQuickLogin("client.test@esignpro.ch", "client123")}
+                >
+                  <Mail className="mr-2 h-4 w-4 text-green-600" />
+                  <div className="text-left">
+                    <div className="font-medium">Client</div>
+                    <div className="text-xs text-gray-500">client.test@esignpro.ch</div>
                   </div>
                 </Button>
               </div>

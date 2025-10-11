@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Correction Automatique Connexion</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .section { 
+            margin: 20px 0; 
+            padding: 20px; 
+            border: 1px solid #ddd; 
+            border-radius: 8px; 
+            background: white;
+        }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .warning { background-color: #fff3cd; border-color: #ffeaa7; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        button { 
+            padding: 12px 20px; 
+            margin: 8px; 
+            cursor: pointer; 
+            border: none;
+            border-radius: 5px;
+            font-weight: bold;
+            background: #007bff;
+            color: white;
+        }
+        .btn-success { background: #28a745; }
+        .btn-warning { background: #ffc107; color: black; }
+        .btn-danger { background: #dc3545; }
+        .log { 
+            background: #f8f9fa; 
+            padding: 15px; 
+            border-radius: 5px; 
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .step {
+            margin: 10px 0;
+            padding: 10px;
+            border-left: 4px solid #007bff;
+            background: #f8f9fa;
+        }
+        .step.success { border-left-color: #28a745; }
+        .step.error { border-left-color: #dc3545; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Correction Automatique du Problème de Connexion</h1>
+        
+        <div class="section info">
+            <h2>🎯 Problème Détecté</h2>
+            <p>L'utilisateur <strong>agent.test@esignpro.ch</strong> existe mais le mot de passe ne correspond pas à "test123".</p>
+            <p>Cette page va automatiquement :</p>
+            <ul>
+                <li>✅ Vérifier l'utilisateur dans la base</li>
+                <li>🔑 Réinitialiser le mot de passe à "test123"</li>
+                <li>🚪 Tester la connexion</li>
+                <li>🎉 Confirmer que tout fonctionne</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>🚀 Correction Automatique</h2>
+            <button class="btn-success" onclick="autoFix()" id="fixBtn">🔧 CORRIGER AUTOMATIQUEMENT</button>
+            <div id="progress"></div>
+        </div>
+
+        <div class="section">
+            <h2>📋 Journal des Opérations</h2>
+            <div id="log" class="log"></div>
+        </div>
+
+        <div class="section" id="finalResult" style="display: none;">
+            <h2>🎉 Résultat Final</h2>
+            <div id="finalMessage"></div>
+            <div style="margin-top: 20px;">
+                <a href="/agent-login" target="_blank" style="display: inline-block; padding: 12px 24px; background: #28a745; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                    🚪 TESTER LA CONNEXION MAINTENANT
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const colors = {
+                info: '#6c757d',
+                success: '#28a745',
+                error: '#dc3545',
+                warning: '#ffc107'
+            };
+            logDiv.innerHTML += `<div style="color: ${colors[type]}; margin: 2px 0;">[${timestamp}] ${message}</div>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function updateProgress(step, status, message) {
+            const progressDiv = document.getElementById('progress');
+            const stepId = `step-${step}`;
+            
+            let stepDiv = document.getElementById(stepId);
+            if (!stepDiv) {
+                stepDiv = document.createElement('div');
+                stepDiv.id = stepId;
+                stepDiv.className = 'step';
+                progressDiv.appendChild(stepDiv);
+            }
+            
+            stepDiv.className = `step ${status}`;
+            stepDiv.innerHTML = `<strong>Étape ${step}:</strong> ${message}`;
+        }
+
+        async function autoFix() {
+            const fixBtn = document.getElementById('fixBtn');
+            fixBtn.disabled = true;
+            fixBtn.textContent = '⏳ Correction en cours...';
+            
+            log('🚀 Début de la correction automatique', 'info');
+            
+            try {
+                // Étape 1: Vérifier l'utilisateur
+                updateProgress(1, '', 'Vérification de l\'utilisateur...');
+                log('🔍 Étape 1: Vérification de l\'utilisateur agent.test@esignpro.ch');
+                
+                const usersResponse = await fetch('/api/admin/users');
+                const usersData = await usersResponse.json();
+                
+                if (!usersData.success) {
+                    throw new Error('Impossible de récupérer les utilisateurs');
+                }
+                
+                const user = usersData.users.find(u => u.email === 'agent.test@esignpro.ch');
+                if (!user) {
+                    updateProgress(1, 'error', 'Utilisateur non trouvé');
+                    log('❌ Utilisateur agent.test@esignpro.ch non trouvé', 'error');
+                    throw new Error('Utilisateur non trouvé');
+                }
+                
+                updateProgress(1, 'success', `Utilisateur trouvé: ${user.first_name} ${user.last_name}`);
+                log(`✅ Utilisateur trouvé: ${user.first_name} ${user.last_name} (ID: ${user.id})`, 'success');
+                
+                // Étape 2: Réinitialiser le mot de passe
+                updateProgress(2, '', 'Réinitialisation du mot de passe...');
+                log('🔑 Étape 2: Réinitialisation du mot de passe à "test123"');
+                
+                const passwordResponse = await fetch('/api/admin/change-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_id: user.id,
+                        new_password: 'test123'
+                    })
+                });
+                
+                const passwordData = await passwordResponse.json();
+                
+                if (!passwordData.success) {
+                    updateProgress(2, 'error', `Erreur: ${passwordData.error}`);
+                    log(`❌ Erreur changement mot de passe: ${passwordData.error}`, 'error');
+                    throw new Error(passwordData.error);
+                }
+                
+                updateProgress(2, 'success', 'Mot de passe réinitialisé à "test123"');
+                log('✅ Mot de passe réinitialisé avec succès', 'success');
+                
+                // Étape 3: Tester la connexion avec agent-login
+                updateProgress(3, '', 'Test connexion agent-login...');
+                log('🚪 Étape 3: Test de connexion avec API agent-login');
+                
+                const agentLoginResponse = await fetch('/api/auth/agent-login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: 'agent.test@esignpro.ch',
+                        password: 'test123'
+                    })
+                });
+                
+                const agentLoginData = await agentLoginResponse.json();
+                
+                if (agentLoginData.success) {
+                    updateProgress(3, 'success', 'Connexion agent-login réussie');
+                    log('✅ Connexion agent-login réussie', 'success');
+                } else {
+                    updateProgress(3, 'warning', 'agent-login échoué, test user-login...');
+                    log(`⚠️ agent-login échoué: ${agentLoginData.error}`, 'warning');
+                    
+                    // Étape 4: Tester avec user-login
+                    updateProgress(4, '', 'Test connexion user-login...');
+                    log('🚪 Étape 4: Test de connexion avec API user-login');
+                    
+                    const userLoginResponse = await fetch('/api/auth/user-login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            email: 'agent.test@esignpro.ch',
+                            password: 'test123'
+                        })
+                    });
+                    
+                    const userLoginData = await userLoginResponse.json();
+                    
+                    if (userLoginData.success) {
+                        updateProgress(4, 'success', 'Connexion user-login réussie');
+                        log('✅ Connexion user-login réussie', 'success');
+                    } else {
+                        updateProgress(4, 'error', `Connexion échouée: ${userLoginData.error}`);
+                        log(`❌ Connexion user-login échouée: ${userLoginData.error}`, 'error');
+                        throw new Error('Toutes les tentatives de connexion ont échoué');
+                    }
+                }
+                
+                // Succès final
+                document.getElementById('finalResult').style.display = 'block';
+                document.getElementById('finalMessage').innerHTML = `
+                    <div class="success">
+                        <h3>🎉 CORRECTION RÉUSSIE !</h3>
+                        <p><strong>✅ Utilisateur:</strong> agent.test@esignpro.ch</p>
+                        <p><strong>✅ Mot de passe:</strong> test123</p>
+                        <p><strong>✅ Connexion:</strong> Fonctionnelle</p>
+                        <p><strong>🚀 Statut:</strong> Prêt à utiliser</p>
+                    </div>
+                `;
+                
+                log('🎉 CORRECTION TERMINÉE AVEC SUCCÈS !', 'success');
+                fixBtn.textContent = '✅ CORRECTION TERMINÉE';
+                fixBtn.style.background = '#28a745';
+                
+            } catch (error) {
+                updateProgress('X', 'error', `Erreur: ${error.message}`);
+                log(`❌ ERREUR GÉNÉRALE: ${error.message}`, 'error');
+                
+                document.getElementById('finalResult').style.display = 'block';
+                document.getElementById('finalMessage').innerHTML = `
+                    <div class="error">
+                        <h3>❌ CORRECTION ÉCHOUÉE</h3>
+                        <p><strong>Erreur:</strong> ${error.message}</p>
+                        <p>Veuillez contacter le support technique.</p>
+                    </div>
+                `;
+                
+                fixBtn.textContent = '❌ CORRECTION ÉCHOUÉE';
+                fixBtn.style.background = '#dc3545';
+                fixBtn.disabled = false;
+            }
+        }
+
+        // Auto-démarrage après 2 secondes
+        window.onload = function() {
+            log('🔧 Page de correction automatique chargée', 'info');
+            log('💡 Cliquez sur "CORRIGER AUTOMATIQUEMENT" pour résoudre le problème', 'info');
+            
+            // Démarrage automatique après 3 secondes
+            setTimeout(() => {
+                if (confirm('Démarrer la correction automatique maintenant ?')) {
+                    autoFix();
+                }
+            }, 3000);
+        };
+    </script>
+</body>
+</html>

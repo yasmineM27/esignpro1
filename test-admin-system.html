@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Admin System</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 3px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test du Système Admin</h1>
+    
+    <div class="test-section">
+        <h2>1. Test Création Agent avec Mot de Passe</h2>
+        <button onclick="testCreateAgent()">Créer Agent Test</button>
+        <div id="create-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>2. Test Connexion Agent</h2>
+        <button onclick="testAgentLogin()">Tester Connexion</button>
+        <div id="login-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>3. Test Modification Agent</h2>
+        <button onclick="testUpdateAgent()">Modifier Agent</button>
+        <div id="update-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>4. Test Suppression Agent</h2>
+        <button onclick="testDeleteAgent()">Supprimer Agent</button>
+        <div id="delete-result"></div>
+    </div>
+
+    <script>
+        let testAgentId = null;
+        let testAgentEmail = 'test.crud@esignpro.ch';
+        let testPassword = 'test123456';
+
+        async function testCreateAgent() {
+            const resultDiv = document.getElementById('create-result');
+            resultDiv.innerHTML = '<p>⏳ Création en cours...</p>';
+            
+            try {
+                const response = await fetch('/api/admin/agents', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        first_name: 'Test',
+                        last_name: 'CRUD',
+                        email: testAgentEmail,
+                        phone: '+41 79 999 99 99',
+                        department: 'Support',
+                        role: 'agent',
+                        is_supervisor: false,
+                        password: testPassword
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    testAgentId = data.agent.id;
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <h3>✅ Agent créé avec succès!</h3>
+                            <p><strong>ID:</strong> ${data.agent.id}</p>
+                            <p><strong>Code:</strong> ${data.agent.agent_code}</p>
+                            <p><strong>Email:</strong> ${data.agent.email}</p>
+                            <p><strong>Mot de passe temporaire:</strong> ${data.temporary_password || 'Défini par l\'utilisateur'}</p>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<div class="error"><h3>❌ Erreur:</h3><p>${data.error}</p></div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error"><h3>❌ Erreur réseau:</h3><p>${error.message}</p></div>`;
+            }
+        }
+
+        async function testAgentLogin() {
+            const resultDiv = document.getElementById('login-result');
+            resultDiv.innerHTML = '<p>⏳ Test de connexion...</p>';
+            
+            try {
+                const response = await fetch('/api/auth/agent-login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: testAgentEmail,
+                        password: testPassword
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <h3>✅ Connexion réussie!</h3>
+                            <p><strong>Agent:</strong> ${data.user.first_name} ${data.user.last_name}</p>
+                            <p><strong>Code:</strong> ${data.user.agents.agent_code}</p>
+                            <p><strong>Département:</strong> ${data.user.agents.department}</p>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<div class="error"><h3>❌ Erreur de connexion:</h3><p>${data.error}</p></div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error"><h3>❌ Erreur réseau:</h3><p>${error.message}</p></div>`;
+            }
+        }
+
+        async function testUpdateAgent() {
+            if (!testAgentId) {
+                document.getElementById('update-result').innerHTML = '<div class="error">❌ Créez d\'abord un agent</div>';
+                return;
+            }
+
+            const resultDiv = document.getElementById('update-result');
+            resultDiv.innerHTML = '<p>⏳ Modification en cours...</p>';
+            
+            try {
+                const response = await fetch(`/api/admin/agents/${testAgentId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        first_name: 'Test',
+                        last_name: 'CRUD Modifié',
+                        email: testAgentEmail,
+                        phone: '+41 79 888 88 88',
+                        department: 'Résiliations',
+                        role: 'supervisor',
+                        is_supervisor: true,
+                        password: 'nouveauMotDePasse123'
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <h3>✅ Agent modifié avec succès!</h3>
+                            <p><strong>Nouveau nom:</strong> ${data.agent.first_name} ${data.agent.last_name}</p>
+                            <p><strong>Nouveau département:</strong> ${data.agent.department}</p>
+                            <p><strong>Nouveau rôle:</strong> ${data.agent.is_supervisor ? 'Superviseur' : 'Agent'}</p>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<div class="error"><h3>❌ Erreur de modification:</h3><p>${data.error}</p></div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error"><h3>❌ Erreur réseau:</h3><p>${error.message}</p></div>`;
+            }
+        }
+
+        async function testDeleteAgent() {
+            if (!testAgentId) {
+                document.getElementById('delete-result').innerHTML = '<div class="error">❌ Créez d\'abord un agent</div>';
+                return;
+            }
+
+            if (!confirm('Êtes-vous sûr de vouloir supprimer l\'agent de test ?')) {
+                return;
+            }
+
+            const resultDiv = document.getElementById('delete-result');
+            resultDiv.innerHTML = '<p>⏳ Suppression en cours...</p>';
+            
+            try {
+                const response = await fetch(`/api/admin/agents/${testAgentId}`, {
+                    method: 'DELETE'
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <h3>✅ Agent supprimé avec succès!</h3>
+                            <p>L'agent de test a été supprimé de la base de données.</p>
+                        </div>
+                    `;
+                    testAgentId = null; // Reset pour les prochains tests
+                } else {
+                    resultDiv.innerHTML = `<div class="error"><h3>❌ Erreur de suppression:</h3><p>${data.error}</p></div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error"><h3>❌ Erreur réseau:</h3><p>${error.message}</p></div>`;
+            }
+        }
+    </script>
+</body>
+</html>
