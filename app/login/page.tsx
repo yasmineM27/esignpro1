@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Separator } from "@/components/ui/separator"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useToast } from "@/hooks/use-toast"
 import Image from "next/image"
@@ -18,7 +17,6 @@ interface LoginCredentials {
   password: string
 }
 
-// Fonction pour déterminer la redirection selon le rôle
 const getRedirectPath = (role: string) => {
   switch (role) {
     case 'admin':
@@ -42,28 +40,19 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
     setError("")
 
     try {
-      // Essayer d'abord avec l'API user-login (plus flexible)
-      let response = await fetch('/api/auth/user-login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: credentials.email,
-          password: credentials.password
-        }),
-      })
+      let response;
+      let data;
 
-      let data = await response.json()
-
-      // Si échec avec user-login, essayer avec agent-login
-      if (!data.success && credentials.email.includes('@esignpro.ch')) {
+      // Si l'email contient @esignpro.ch, essayer d'abord agent-login
+      if (credentials.email.includes('@esignpro.ch')) {
+        console.log('🔍 Email @esignpro.ch détecté, tentative agent-login...')
         response = await fetch('/api/auth/agent-login', {
           method: 'POST',
           headers: {
@@ -75,18 +64,64 @@ export default function LoginPage() {
           }),
         })
         data = await response.json()
+        console.log('🔍 Résultat agent-login:', data.success ? 'SUCCÈS' : 'ÉCHEC')
+
+        // Si agent-login échoue, essayer user-login
+        if (!data.success) {
+          console.log('🔍 Agent-login échoué, tentative user-login...')
+          response = await fetch('/api/auth/user-login', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              email: credentials.email,
+              password: credentials.password
+            }),
+          })
+          data = await response.json()
+          console.log('🔍 Résultat user-login:', data.success ? 'SUCCÈS' : 'ÉCHEC')
+        }
+      } else {
+        // Pour les autres emails, utiliser user-login directement
+        console.log('🔍 Email standard, tentative user-login...')
+        response = await fetch('/api/auth/user-login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email: credentials.email,
+            password: credentials.password
+          }),
+        })
+        data = await response.json()
+        console.log('🔍 Résultat user-login:', data.success ? 'SUCCÈS' : 'ÉCHEC')
       }
 
       if (data.success) {
-        // Connexion réussie
+        console.log('🔍 Données utilisateur reçues:', data.user)
+        console.log('🔍 Rôle utilisateur:', data.user.role)
+
         toast({
-          title: "Connexion réussie",
+          title: "Connexion reussie",
           description: `Bienvenue ${data.user.first_name} ${data.user.last_name}`,
         })
 
-        // Redirection selon le rôle
         const redirectPath = getRedirectPath(data.user.role)
-        router.push(redirectPath)
+        console.log('🔍 Chemin de redirection calculé:', redirectPath)
+
+        // Essayer la redirection avec router.push
+        console.log('🔍 Tentative redirection avec router.push...')
+        try {
+          await router.push(redirectPath)
+          console.log('✅ Redirection router.push réussie')
+        } catch (error) {
+          console.error('❌ Erreur router.push:', error)
+          // Fallback avec window.location
+          console.log('🔍 Fallback avec window.location...')
+          window.location.href = redirectPath
+        }
       } else {
         setError(data.error || 'Email ou mot de passe incorrect')
       }
@@ -98,25 +133,13 @@ export default function LoginPage() {
     }
   }
 
-  const handleQuickLogin = (email: string, password: string) => {
-    setCredentials({ email, password })
-    // Auto-submit after setting credentials
-    setTimeout(() => {
-      const form = document.getElementById('login-form') as HTMLFormElement
-      if (form) {
-        form.requestSubmit()
-      }
-    }, 100)
-  }
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-red-50 to-gray-100 flex items-center justify-center p-6">
       <div className="w-full max-w-md">
-        {/* Header */}
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center text-gray-600 hover:text-gray-900 mb-6">
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Retour à l'accueil
+            Retour a l'accueil
           </Link>
           <Image
             src="/images/esignpro-logo.png"
@@ -125,15 +148,15 @@ export default function LoginPage() {
             height={54}
             className="h-12 w-auto mx-auto mb-4"
           />
-          <h1 className="text-2xl font-bold text-gray-900">Connexion Sécurisée</h1>
-          <p className="text-gray-600">Accédez à votre espace professionnel</p>
+          <h1 className="text-2xl font-bold text-gray-900">Connexion Securisee</h1>
+          <p className="text-gray-600">Accedez a votre espace professionnel</p>
         </div>
 
         <Card className="shadow-xl border-0">
           <CardHeader className="space-y-1">
             <CardTitle className="text-xl text-center">Se connecter</CardTitle>
             <CardDescription className="text-center">
-              Entrez vos identifiants pour accéder à votre espace
+              Entrez vos identifiants pour acceder a votre espace
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -169,7 +192,7 @@ export default function LoginPage() {
                   <Input
                     id="password"
                     type={showPassword ? "text" : "password"}
-                    placeholder="••••••••"
+                    placeholder="********"
                     className="pl-10 pr-10"
                     value={credentials.password}
                     onChange={(e) => setCredentials({ ...credentials, password: e.target.value })}
@@ -195,65 +218,19 @@ export default function LoginPage() {
                 <Shield className="mr-2 h-4 w-4" />
                 {isLoading ? "Connexion..." : "Se connecter"}
               </Button>
+
             </form>
-
-            <Separator />
-
-            <div className="space-y-3">
-              <p className="text-sm text-center text-gray-600 font-medium">Connexion rapide pour la démo :</p>
-
-              <div className="grid gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full bg-transparent text-left justify-start"
-                  onClick={() => handleQuickLogin("waelha@gmail.com", "admin123")}
-                >
-                  <Shield className="mr-2 h-4 w-4 text-red-600" />
-                  <div className="text-left">
-                    <div className="font-medium">Administrateur</div>
-                    <div className="text-xs text-gray-500">waelha@gmail.com</div>
-                  </div>
-                </Button>
-
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full bg-transparent text-left justify-start"
-                  onClick={() => handleQuickLogin("agent.test@esignpro.ch", "test123")}
-                >
-                  <Mail className="mr-2 h-4 w-4 text-blue-600" />
-                  <div className="text-left">
-                    <div className="font-medium">Agent</div>
-                    <div className="text-xs text-gray-500">agent.test@esignpro.ch</div>
-                  </div>
-                </Button>
-
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full bg-transparent text-left justify-start"
-                  onClick={() => handleQuickLogin("client.test@esignpro.ch", "client123")}
-                >
-                  <Mail className="mr-2 h-4 w-4 text-green-600" />
-                  <div className="text-left">
-                    <div className="font-medium">Client</div>
-                    <div className="text-xs text-gray-500">client.test@esignpro.ch</div>
-                  </div>
-                </Button>
-              </div>
-            </div>
 
             <div className="text-center text-sm text-gray-600 space-y-2">
               <div>
                 <Link href="/forgot-password" className="text-red-600 hover:underline">
-                  Mot de passe oublié ?
+                  Mot de passe oublie ?
                 </Link>
               </div>
               <div>
                 Pas encore de compte ?{" "}
                 <Link href="/register" className="text-red-600 hover:underline font-medium">
-                  Créer un compte
+                  Creer un compte
                 </Link>
               </div>
             </div>
@@ -261,7 +238,7 @@ export default function LoginPage() {
         </Card>
 
         <div className="mt-6 text-center text-xs text-gray-500">
-          <p>Connexion sécurisée SSL • Conforme RGPD</p>
+          <p>Connexion securisee SSL - Conforme RGPD</p>
         </div>
       </div>
     </div>

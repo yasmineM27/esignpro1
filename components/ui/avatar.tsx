@@ -50,4 +50,25 @@ function AvatarFallback({
   )
 }
 
-export { Avatar, AvatarImage, AvatarFallback }
+function AvatarInitial({
+  className,
+  children,
+  ...props
+}: React.HTMLAttributes<HTMLDivElement> & {
+  children: React.ReactNode
+}) {
+  return (
+    <div
+      data-slot="avatar-initial"
+      className={cn(
+        'flex size-full items-center justify-center rounded-full bg-primary text-primary-foreground font-medium text-sm',
+        className,
+      )}
+      {...props}
+    >
+      {children}
+    </div>
+  )
+}
+
+export { Avatar, AvatarImage, AvatarFallback, AvatarInitial }

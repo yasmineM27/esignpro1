@@ -15,15 +15,16 @@ export default function HomePage() {
             <div className="flex items-center space-x-4">
               <Image src="/images/esignpro-logo.png" alt="eSignPro" width={180} height={54} className="h-12 w-auto" />
               <Badge variant="secondary" className="bg-red-50 text-red-700 border-red-200">
-                Signature Électronique Sécurisée
+                Signature Electronique Securisee
               </Badge>
             </div>
             <nav className="flex items-center space-x-6">
-              <Link href="/agent" className="text-gray-600 hover:text-gray-900 font-medium">
+              {/* 🔒 ACCÈS SÉCURISÉ - Redirection vers /login */}
+              <Link href="/login" className="text-gray-600 hover:text-gray-900 font-medium">
                 Espace Agent
               </Link>
-              <Link href="/admin" className="text-gray-600 hover:text-gray-900 font-medium">
-                Administration
+              <Link href="/demo" className="text-gray-600 hover:text-gray-900 font-medium">
+                Démonstration
               </Link>
               <Button asChild variant="outline" size="sm">
                 <Link href="/login">
@@ -36,103 +37,133 @@ export default function HomePage() {
       </header>
 
       {/* Hero Section */}
-      <section className="py-20">
-        <div className="mx-auto max-w-7xl px-6">
+      <section className="py-24 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-red-50/50 to-blue-50/50"></div>
+        <div className="mx-auto max-w-7xl px-6 relative">
           <div className="text-center">
-            <h1 className="text-5xl font-bold text-gray-900 mb-6 text-balance">
-              Signature Électronique <span className="text-red-600">Sécurisée</span>
+            <div className="inline-flex items-center px-4 py-2 rounded-full bg-red-100 text-red-800 text-sm font-medium mb-6">
+              <Shield className="w-4 h-4 mr-2" />
+              Conforme SCSE - Legislation Suisse
+            </div>
+            <h1 className="text-6xl font-bold text-gray-900 mb-6 text-balance leading-tight">
+              Signature Electronique <span className="text-red-600 relative">
+                Securisee
+                <div className="absolute -bottom-2 left-0 right-0 h-1 bg-red-200 rounded-full"></div>
+              </span>
             </h1>
-            <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto text-pretty">
-              Plateforme professionnelle pour la gestion des résiliations d'assurance avec signature électronique
-              conforme à la législation suisse (SCSE)
+            <p className="text-xl text-gray-600 mb-10 max-w-4xl mx-auto text-pretty leading-relaxed">
+              Plateforme professionnelle de nouvelle generation pour la gestion des resiliations d'assurance
+              avec signature electronique securisee, conforme a la legislation suisse et aux standards internationaux
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button asChild size="lg" className="bg-red-600 hover:bg-red-700">
-                <Link href="/agent">
-                  <Users className="mr-2 h-5 w-5" />
+            <div className="flex flex-col sm:flex-row gap-6 justify-center mb-12">
+              {/* 🔒 ACCÈS SÉCURISÉ - Redirection vers /login */}
+              <Button asChild size="lg" className="bg-red-600 hover:bg-red-700 shadow-lg hover:shadow-xl transition-all duration-300 px-8 py-4 text-lg">
+                <Link href="/login">
+                  <Users className="mr-3 h-6 w-6" />
                   Espace Agent
-                  <ArrowRight className="ml-2 h-5 w-5" />
+                  <ArrowRight className="ml-3 h-6 w-6" />
                 </Link>
               </Button>
-              <Button asChild variant="outline" size="lg">
+              <Button asChild variant="outline" size="lg" className="border-2 border-gray-300 hover:border-red-600 hover:text-red-600 shadow-lg hover:shadow-xl transition-all duration-300 px-8 py-4 text-lg">
                 <Link href="/demo">
-                  <FileText className="mr-2 h-5 w-5" />
-                  Voir la Démo
+                  <FileText className="mr-3 h-6 w-6" />
+                  Voir la Demo
                 </Link>
               </Button>
+            </div>
+
+            {/* Stats Section */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+              <div className="text-center">
+                <div className="text-3xl font-bold text-red-600 mb-2">99.9%</div>
+                <div className="text-gray-600">Disponibilite</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-red-600 mb-2">&lt; 30s</div>
+                <div className="text-gray-600">Temps de signature</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-red-600 mb-2">100%</div>
+                <div className="text-gray-600">Conforme SCSE</div>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
       {/* Features Grid */}
-      <section className="py-16 bg-white">
-        <div className="mx-auto max-w-7xl px-6">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">Fonctionnalités Principales</h2>
-            <p className="text-lg text-gray-600">Une solution complète pour vos besoins de signature électronique</p>
+      <section className="py-20 bg-white relative">
+        <div className="absolute inset-0 bg-gradient-to-b from-gray-50/50 to-white"></div>
+        <div className="mx-auto max-w-7xl px-6 relative">
+          <div className="text-center mb-20">
+            <div className="inline-flex items-center px-4 py-2 rounded-full bg-blue-100 text-blue-800 text-sm font-medium mb-6">
+              <Zap className="w-4 h-4 mr-2" />
+              Technologie Avancee
+            </div>
+            <h2 className="text-4xl font-bold text-gray-900 mb-6">Fonctionnalités Principales</h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">Une solution complete et innovante pour tous vos besoins de signature electronique professionnelle</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <Card className="border-0 shadow-lg hover:shadow-xl transition-shadow">
-              <CardHeader>
-                <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center mb-4">
-                  <Shield className="h-6 w-6 text-red-600" />
+            <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group">
+              <CardHeader className="pb-8">
+                <div className="w-16 h-16 bg-red-100 rounded-xl flex items-center justify-center mb-6 group-hover:bg-red-200 transition-colors">
+                  <Shield className="h-8 w-8 text-red-600" />
                 </div>
-                <CardTitle>Sécurité Maximale</CardTitle>
-                <CardDescription>
-                  Conforme SCSE avec chiffrement de bout en bout et authentification forte
+                <CardTitle className="text-xl mb-3">Securite Maximale</CardTitle>
+                <CardDescription className="text-base leading-relaxed">
+                  Conforme SCSE avec chiffrement de bout en bout, authentification forte et audit complet des actions
                 </CardDescription>
               </CardHeader>
             </Card>
 
-            <Card className="border-0 shadow-lg hover:shadow-xl transition-shadow">
-              <CardHeader>
-                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
-                  <Zap className="h-6 w-6 text-blue-600" />
+            <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group">
+              <CardHeader className="pb-8">
+                <div className="w-16 h-16 bg-blue-100 rounded-xl flex items-center justify-center mb-6 group-hover:bg-blue-200 transition-colors">
+                  <Zap className="h-8 w-8 text-blue-600" />
                 </div>
-                <CardTitle>Automatisation Complète</CardTitle>
-                <CardDescription>Remplissage automatique des formulaires et génération de documents</CardDescription>
+                <CardTitle className="text-xl mb-3">Automatisation Complete</CardTitle>
+                <CardDescription className="text-base leading-relaxed">Remplissage automatique des formulaires, generation de documents et workflow intelligent</CardDescription>
               </CardHeader>
             </Card>
 
-            <Card className="border-0 shadow-lg hover:shadow-xl transition-shadow">
-              <CardHeader>
-                <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4">
-                  <Clock className="h-6 w-6 text-green-600" />
+            <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group">
+              <CardHeader className="pb-8">
+                <div className="w-16 h-16 bg-green-100 rounded-xl flex items-center justify-center mb-6 group-hover:bg-green-200 transition-colors">
+                  <Clock className="h-8 w-8 text-green-600" />
                 </div>
-                <CardTitle>Processus Rapide</CardTitle>
-                <CardDescription>Signature en 4 étapes simples avec suivi en temps réel</CardDescription>
+                <CardTitle className="text-xl mb-3">Processus Rapide</CardTitle>
+                <CardDescription className="text-base leading-relaxed">Signature en 4 etapes simples avec suivi en temps reel et notifications automatiques</CardDescription>
               </CardHeader>
             </Card>
 
-            <Card className="border-0 shadow-lg hover:shadow-xl transition-shadow">
-              <CardHeader>
-                <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4">
-                  <FileText className="h-6 w-6 text-purple-600" />
+            <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group">
+              <CardHeader className="pb-8">
+                <div className="w-16 h-16 bg-purple-100 rounded-xl flex items-center justify-center mb-6 group-hover:bg-purple-200 transition-colors">
+                  <FileText className="h-8 w-8 text-purple-600" />
                 </div>
-                <CardTitle>Templates Configurables</CardTitle>
-                <CardDescription>Bibliothèque de modèles personnalisables pour tous types de documents</CardDescription>
+                <CardTitle className="text-xl mb-3">Templates Configurables</CardTitle>
+                <CardDescription className="text-base leading-relaxed">Bibliotheque de modeles personnalisables pour tous types de documents et contrats</CardDescription>
               </CardHeader>
             </Card>
 
-            <Card className="border-0 shadow-lg hover:shadow-xl transition-shadow">
-              <CardHeader>
-                <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mb-4">
-                  <Lock className="h-6 w-6 text-orange-600" />
+            <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group">
+              <CardHeader className="pb-8">
+                <div className="w-16 h-16 bg-orange-100 rounded-xl flex items-center justify-center mb-6 group-hover:bg-orange-200 transition-colors">
+                  <Lock className="h-8 w-8 text-orange-600" />
                 </div>
-                <CardTitle>Audit Trail</CardTitle>
-                <CardDescription>Traçabilité complète avec horodatage et certificats de signature</CardDescription>
+                <CardTitle className="text-xl mb-3">Audit Trail</CardTitle>
+                <CardDescription className="text-base leading-relaxed">Tracabilite complete avec horodatage, certificats de signature et preuves legales</CardDescription>
               </CardHeader>
             </Card>
 
-            <Card className="border-0 shadow-lg hover:shadow-xl transition-shadow">
-              <CardHeader>
-                <div className="w-12 h-12 bg-teal-100 rounded-lg flex items-center justify-center mb-4">
-                  <Globe className="h-6 w-6 text-teal-600" />
+            <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group">
+              <CardHeader className="pb-8">
+                <div className="w-16 h-16 bg-teal-100 rounded-xl flex items-center justify-center mb-6 group-hover:bg-teal-200 transition-colors">
+                  <Globe className="h-8 w-8 text-teal-600" />
                 </div>
-                <CardTitle>Multi-plateforme</CardTitle>
-                <CardDescription>Accessible sur tous appareils avec interface responsive</CardDescription>
+                <CardTitle className="text-xl mb-3">Multi-plateforme</CardTitle>
+                <CardDescription className="text-base leading-relaxed">Accessible sur tous appareils avec interface responsive et synchronisation cloud</CardDescription>
               </CardHeader>
             </Card>
           </div>
@@ -140,42 +171,69 @@ export default function HomePage() {
       </section>
 
       {/* Stats Section */}
-      <section className="py-16 bg-gradient-to-r from-red-600 to-red-700 text-white">
-        <div className="mx-auto max-w-7xl px-6">
+      <section className="py-20 bg-gradient-to-r from-red-600 via-red-700 to-red-800 text-white relative overflow-hidden">
+        <div className="absolute inset-0 bg-black/10"></div>
+        <div className="mx-auto max-w-7xl px-6 relative">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl font-bold mb-4">Performances Exceptionnelles</h2>
+            <p className="text-red-100 text-lg">Des chiffres qui parlent d'eux-memes</p>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 text-center">
-            <div>
-              <div className="text-4xl font-bold mb-2">99.9%</div>
-              <div className="text-red-100">Disponibilité</div>
+            <div className="group">
+              <div className="text-5xl font-bold mb-3 group-hover:scale-110 transition-transform duration-300">99.9%</div>
+              <div className="text-red-100 text-lg font-medium">Disponibilite</div>
+              <div className="text-red-200 text-sm mt-1">Service 24/7</div>
             </div>
-            <div>
-              <div className="text-4xl font-bold mb-2">2min</div>
-              <div className="text-red-100">Temps moyen</div>
+            <div className="group">
+              <div className="text-5xl font-bold mb-3 group-hover:scale-110 transition-transform duration-300">&lt; 30s</div>
+              <div className="text-red-100 text-lg font-medium">Temps de signature</div>
+              <div className="text-red-200 text-sm mt-1">Ultra rapide</div>
             </div>
-            <div>
-              <div className="text-4xl font-bold mb-2">100%</div>
-              <div className="text-red-100">Conforme SCSE</div>
+            <div className="group">
+              <div className="text-5xl font-bold mb-3 group-hover:scale-110 transition-transform duration-300">100%</div>
+              <div className="text-red-100 text-lg font-medium">Conforme SCSE</div>
+              <div className="text-red-200 text-sm mt-1">Legalement valide</div>
             </div>
-            <div>
-              <div className="text-4xl font-bold mb-2">24/7</div>
-              <div className="text-red-100">Support</div>
+            <div className="group">
+              <div className="text-5xl font-bold mb-3 group-hover:scale-110 transition-transform duration-300">24/7</div>
+              <div className="text-red-100 text-lg font-medium">Support Expert</div>
+              <div className="text-red-200 text-sm mt-1">Assistance continue</div>
             </div>
           </div>
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="py-20">
-        <div className="mx-auto max-w-4xl px-6 text-center">
-          <h2 className="text-3xl font-bold text-gray-900 mb-6">Prêt à digitaliser vos processus ?</h2>
-          <p className="text-lg text-gray-600 mb-8">
-            Rejoignez les professionnels qui font confiance à eSignPro pour leurs signatures électroniques
+      <section className="py-24 bg-gradient-to-br from-gray-50 to-blue-50 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-red-50/30 to-blue-50/30"></div>
+        <div className="mx-auto max-w-5xl px-6 text-center relative">
+          <div className="inline-flex items-center px-4 py-2 rounded-full bg-green-100 text-green-800 text-sm font-medium mb-8">
+            <Shield className="w-4 h-4 mr-2" />
+            Solution Professionnelle Certifiee
+          </div>
+          <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-8 leading-tight">
+            Pret a <span className="text-red-600">revolutionner</span><br />
+            vos processus de signature ?
+          </h2>
+          <p className="text-xl text-gray-600 mb-12 max-w-3xl mx-auto leading-relaxed">
+            Rejoignez les milliers de professionnels qui font confiance a eSignPro pour leurs signatures electroniques securisees et conformes
           </p>
-          <Button asChild size="lg" className="bg-red-600 hover:bg-red-700">
-            <Link href="/agent">
-              Commencer maintenant
-              <ArrowRight className="ml-2 h-5 w-5" />
-            </Link>
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-6 justify-center">
+            {/* 🔒 ACCÈS SÉCURISÉ - Redirection vers /login */}
+            <Button asChild size="lg" className="bg-red-600 hover:bg-red-700 shadow-lg hover:shadow-xl transition-all duration-300 px-10 py-4 text-lg">
+              <Link href="/login">
+                <Users className="mr-3 h-6 w-6" />
+                Commencer maintenant
+                <ArrowRight className="ml-3 h-6 w-6" />
+              </Link>
+            </Button>
+            <Button asChild variant="outline" size="lg" className="border-2 border-gray-300 hover:border-red-600 hover:text-red-600 shadow-lg hover:shadow-xl transition-all duration-300 px-10 py-4 text-lg">
+              <Link href="/demo">
+                <FileText className="mr-3 h-6 w-6" />
+                Voir la demonstration
+              </Link>
+            </Button>
+          </div>
         </div>
       </section>
 
@@ -191,14 +249,14 @@ export default function HomePage() {
                 height={45}
                 className="h-10 w-auto mb-4 brightness-0 invert"
               />
-              <p className="text-gray-400">Solution de signature électronique sécurisée pour professionnels</p>
+              <p className="text-gray-400">Solution de signature electronique securisee pour professionnels</p>
             </div>
             <div>
               <h3 className="font-semibold mb-4">Produit</h3>
               <ul className="space-y-2 text-gray-400">
                 <li>
                   <Link href="/features" className="hover:text-white">
-                    Fonctionnalités
+                    Fonctionnalites
                   </Link>
                 </li>
                 <li>
@@ -208,7 +266,7 @@ export default function HomePage() {
                 </li>
                 <li>
                   <Link href="/security" className="hover:text-white">
-                    Sécurité
+                    Securite
                   </Link>
                 </li>
               </ul>
@@ -234,11 +292,11 @@ export default function HomePage() {
               </ul>
             </div>
             <div>
-              <h3 className="font-semibold mb-4">Légal</h3>
+              <h3 className="font-semibold mb-4">Legal</h3>
               <ul className="space-y-2 text-gray-400">
                 <li>
                   <Link href="/privacy" className="hover:text-white">
-                    Confidentialité
+                    Confidentialite
                   </Link>
                 </li>
                 <li>
@@ -248,14 +306,14 @@ export default function HomePage() {
                 </li>
                 <li>
                   <Link href="/compliance" className="hover:text-white">
-                    Conformité
+                    Conformite
                   </Link>
                 </li>
               </ul>
             </div>
           </div>
           <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-            <p>&copy; 2024 eSignPro. Tous droits réservés.</p>
+            <p>&copy; 2024 eSignPro. Tous droits reserves.</p>
           </div>
         </div>
       </footer>

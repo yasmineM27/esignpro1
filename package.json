@@ -72,6 +72,7 @@
     "embla-carousel-react": "8.5.1",
     "exceljs": "^4.4.0",
     "input-otp": "1.4.1",
+    "jose": "^6.1.0",
     "jsonwebtoken": "^9.0.2",
     "jszip": "^3.10.1",
     "lucide-react": "^0.454.0",

@@ -581,8 +581,84 @@ export function ClientForm() {
     )
   }
 
-  // Show multi-template generator for existing clients
+  // Pour les clients existants avec signature, envoyer directement l'email
+  // sans afficher l'étape 2/2
   if (showMultiTemplateGenerator && selectedClient && currentCaseId) {
+    // Si le client a une signature, envoyer directement l'email
+    if (selectedClient.hasSignature) {
+      // Envoyer l'email automatiquement et revenir à la sélection
+      React.useEffect(() => {
+        const sendEmailDirectly = async () => {
+          try {
+            setIsLoading(true)
+
+            // Envoyer l'email de notification pour nouveau dossier
+            const emailResponse = await fetch('/api/agent/send-documents-email', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                caseId: currentCaseId,
+                clientEmail: selectedClient.email,
+                clientName: selectedClient.fullName,
+                agentId: 'current-agent' // L'API récupérera l'agent depuis le token
+              })
+            })
+
+            const emailData = await emailResponse.json()
+
+            if (emailData.success) {
+              toast({
+                title: "✅ Email envoyé !",
+                description: `Notification envoyée à ${selectedClient.fullName} pour le nouveau dossier avec signature existante`,
+              })
+            } else {
+              throw new Error(emailData.error || 'Erreur envoi email')
+            }
+          } catch (error) {
+            console.error('Erreur envoi email direct:', error)
+            toast({
+              title: "Erreur",
+              description: "Erreur lors de l'envoi de l'email",
+              variant: "destructive"
+            })
+          } finally {
+            setIsLoading(false)
+            // Revenir à la sélection client
+            handleBackToClientSelection()
+          }
+        }
+
+        sendEmailDirectly()
+      }, []) // Exécuter une seule fois au montage
+
+      // Afficher un message de traitement pendant l'envoi
+      return (
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Mail className="h-5 w-5" />
+                Envoi de la notification...
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="text-center py-8">
+              <div className="flex flex-col items-center gap-4">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                <p className="text-gray-600">
+                  Envoi de l'email de notification à <strong>{selectedClient.fullName}</strong>
+                  <br />
+                  <span className="text-sm">Le dossier sera créé avec la signature existante</span>
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )
+    }
+
+    // Si pas de signature, afficher l'étape 2/2 normale
     return (
       <div className="space-y-6">
         <Card>
