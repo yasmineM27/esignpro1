@@ -1031,7 +1031,12 @@ export class OpsioRobustGenerator {
                 children: data.signatureData ? [
                   // Ajouter l'image de signature réelle si disponible
                   new ImageRun({
-                    data: Buffer.from(data.signatureData, 'base64'),
+                    data: Buffer.from(
+                      data.signatureData.includes(',')
+                        ? data.signatureData.split(',')[1] // Enlever le préfixe data:image/...;base64,
+                        : data.signatureData, // Déjà en base64 pur
+                      'base64'
+                    ),
                     transformation: {
                       width: 200,
                       height: 100,
@@ -1047,20 +1052,7 @@ export class OpsioRobustGenerator {
                 spacing: { after: 100 },
               }),
 
-              // Ajouter le texte de confirmation de signature électronique
-              ...(data.signatureData ? [
-                new Paragraph({
-                  children: [
-                    new TextRun({
-                      text: `[Signature électronique appliquée le ${currentDate}]`,
-                      size: 18,
-                      italics: true,
-                      color: "666666",
-                    }),
-                  ],
-                  spacing: { after: 400 },
-                })
-              ] : []),
+              // Texte de confirmation supprimé comme demandé
 
               // Fin du document
               new Paragraph({

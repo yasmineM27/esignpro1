@@ -589,20 +589,7 @@ export class DocxGenerator {
         spacing: { after: 100 },
       }),
 
-      // Ajouter le texte de confirmation de signature électronique
-      ...(signatureDataUrl ? [
-        new Paragraph({
-          children: [
-            new TextRun({
-              text: `[Signature électronique appliquée le ${new Date().toLocaleString("fr-CH")}]`,
-              size: 20,
-              italics: true,
-              color: "666666",
-            }),
-          ],
-          spacing: { after: 400 },
-        })
-      ] : [])
+      // Texte de confirmation supprimé comme demandé
     )
 
     // Créer le document

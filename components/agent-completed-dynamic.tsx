@@ -202,14 +202,16 @@ export function AgentCompletedDynamic() {
         description: `Génération du ZIP avec tous les documents de ${caseItem.client.fullName}...`,
       });
 
-      // Appeler l'API de téléchargement
+      // Appeler l'API de téléchargement avec génération des documents signés
       const response = await fetch('/api/client/download-all-documents', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          clientId: caseItem.client.id
+          clientId: caseItem.client.id,
+          generateSignedDocuments: true, // 🆕 Générer OPSIO + résiliation signés pour tous les dossiers
+          includeAllCases: true // 🆕 Inclure tous les dossiers du client
         })
       });
 
