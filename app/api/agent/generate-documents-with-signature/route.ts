@@ -135,11 +135,11 @@ export async function POST(request: NextRequest) {
 
     // 4. Préparer la session de génération (sans DB)
     const sessionId = `session-${Date.now()}`;
-    const sessionName = sessionName || `Génération ${new Date().toLocaleString('fr-CH')}`;
+    const finalSessionName = sessionName || `Génération ${new Date().toLocaleString('fr-CH')}`;
 
     console.log('📝 Session de génération:', {
       sessionId,
-      sessionName,
+      sessionName: finalSessionName,
       templatesCount: templates.length
     });
 

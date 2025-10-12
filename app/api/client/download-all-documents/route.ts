@@ -4,6 +4,8 @@ import JSZip from 'jszip';
 import { Document, Packer, Paragraph, TextRun, ImageRun } from 'docx';
 import { readFile } from 'fs/promises';
 import { join } from 'path';
+import { OpsioRobustGenerator } from '@/lib/opsio-robust-generator';
+import { DocxGenerator } from '@/lib/docx-generator';
 
 // Fonction utilitaire pour télécharger un fichier depuis son emplacement de stockage
 async function downloadFileFromStorage(document: any): Promise<{ buffer: Buffer | null, error: string | null }> {
@@ -693,6 +695,78 @@ export async function POST(request: NextRequest) {
         };
 
         caseFolder?.file('informations_dossier.json', JSON.stringify(caseInfo, null, 2));
+
+        // 🆕 GÉNÉRER LES DOCUMENTS OBLIGATOIRES POUR CHAQUE DOSSIER (OPSIO + RÉSILIATION) AVEC SIGNATURES
+        console.log(`📄 Génération documents obligatoires pour dossier ${caseItem.case_number}...`);
+
+        // Récupérer la signature pour ce dossier
+        const caseSignature = caseSignatures.find(s => s.case_id === caseItem.id);
+        const signatureData = caseSignature?.signature_data ||
+                             (clientSignatures && clientSignatures.length > 0 ? clientSignatures[0].signature_data : null);
+
+        // Données communes pour les templates
+        const templateData = {
+          clientName: clientName,
+          clientAddress: client.users.email || 'Adresse non renseignée', // Fallback
+          clientPostalCity: 'Ville non renseignée', // À améliorer avec vraies données
+          clientBirthdate: '',
+          clientEmail: client.users.email,
+          clientPhone: '',
+          advisorName: 'Conseiller OPSIO',
+          advisorEmail: 'info@opsio.ch',
+          advisorPhone: '+41 78 305 12 77',
+          insuranceCompany: caseItem.insurance_company || 'Compagnie d\'assurance',
+          policyNumber: caseItem.policy_number || '',
+          lamalTerminationDate: caseItem.completed_at ? new Date(caseItem.completed_at).toLocaleDateString('fr-CH') : '',
+          lcaTerminationDate: caseItem.completed_at ? new Date(caseItem.completed_at).toLocaleDateString('fr-CH') : '',
+          paymentMethod: 'commission' as 'commission',
+          signatureData: signatureData || undefined
+        };
+
+        // Créer dossier pour documents générés
+        const generatedDocsFolder = caseFolder?.folder('documents-generes-signes');
+
+        // 1. Générer document OPSIO avec signature
+        try {
+          console.log(`📄 Génération OPSIO pour dossier ${caseItem.case_number}...`);
+
+          const opsioBuffer = await OpsioRobustGenerator.generateRobustOpsioDocument(templateData);
+
+          if (opsioBuffer) {
+            generatedDocsFolder?.file(`Feuille_Information_OPSIO_${caseItem.case_number}.docx`, opsioBuffer);
+            console.log(`✅ Document OPSIO généré pour ${caseItem.case_number} (${opsioBuffer.length} bytes)`);
+          }
+        } catch (error) {
+          console.error(`❌ Erreur génération OPSIO pour ${caseItem.case_number}:`, error);
+        }
+
+        // 2. Générer lettre de résiliation avec signature
+        try {
+          console.log(`📄 Génération résiliation pour dossier ${caseItem.case_number}...`);
+
+          const clientDataForResignation = {
+            nomPrenom: clientName,
+            adresse: templateData.clientAddress,
+            npaVille: templateData.clientPostalCity,
+            lieuDate: `Genève, le ${new Date().toLocaleDateString('fr-CH')}`,
+            compagnieAssurance: templateData.insuranceCompany,
+            numeroPoliceLAMal: templateData.policyNumber,
+            numeroPoliceLCA: templateData.policyNumber,
+            dateResiliationLAMal: templateData.lamalTerminationDate,
+            dateResiliationLCA: templateData.lcaTerminationDate,
+            motifResiliation: 'Changement de situation',
+            personnes: [] // Pas de personnes supplémentaires pour l'instant
+          };
+
+          const resignationBuffer = await DocxGenerator.generateResignationDocument(clientDataForResignation, signatureData);
+
+          if (resignationBuffer) {
+            generatedDocsFolder?.file(`Lettre_Resiliation_${caseItem.case_number}.docx`, resignationBuffer);
+            console.log(`✅ Document résiliation généré pour ${caseItem.case_number} (${resignationBuffer.length} bytes)`);
+          }
+        } catch (error) {
+          console.error(`❌ Erreur génération résiliation pour ${caseItem.case_number}:`, error);
+        }
 
         // Documents spécifiques à ce dossier
         const caseDocuments = clientDocuments?.filter(doc => doc.token === caseItem.case_number) || [];

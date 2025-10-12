@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lettre de Résiliation d'Assurance</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            line-height: 1.6;
+            margin: 40px;
+            color: #000;
+        }
+        .header {
+            margin-bottom: 40px;
+        }
+        .sender-info {
+            margin-bottom: 30px;
+        }
+        .recipient-info {
+            margin: 30px 0;
+            padding: 15px;
+            border: 1px solid #ccc;
+            background-color: #f9f9f9;
+        }
+        .date-location {
+            text-align: right;
+            margin: 20px 0;
+        }
+        .subject {
+            font-weight: bold;
+            margin: 20px 0;
+            text-decoration: underline;
+        }
+        .content {
+            margin: 20px 0;
+        }
+        .person-section {
+            margin: 15px 0;
+            padding: 10px;
+            border-left: 3px solid #0066cc;
+            background-color: #f8f9fa;
+        }
+        .person-title {
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        .field {
+            margin: 5px 0;
+        }
+        .field-label {
+            font-weight: bold;
+            display: inline-block;
+            width: 150px;
+        }
+        .field-value {
+            border-bottom: 1px dotted #666;
+            display: inline-block;
+            min-width: 200px;
+            padding: 2px;
+        }
+        .termination-dates {
+            margin: 20px 0;
+            padding: 15px;
+            border: 2px solid #dc3545;
+            background-color: #fff5f5;
+        }
+        .signature-section {
+            margin-top: 50px;
+        }
+        .signature-line {
+            border-bottom: 1px solid #000;
+            height: 50px;
+            margin: 20px 0;
+            width: 300px;
+        }
+        @media print {
+            body { margin: 20px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="sender-info">
+            <strong>Nom prénom :</strong> <span id="client-name">{{CLIENT_NAME}}</span><br><br>
+            <strong>Adresse:</strong> <span id="client-address">{{CLIENT_ADDRESS}}</span><br><br>
+            <strong>NPA Ville:</strong> <span id="client-postal-city">{{CLIENT_POSTAL_CITY}}</span><br><br>
+        </div>
+        
+        <div class="recipient-info">
+            <strong>Destinataire:</strong><br>
+            <span id="insurance-company">{{INSURANCE_COMPANY}}</span><br>
+            <span id="company-address">{{COMPANY_ADDRESS}}</span><br>
+            <span id="company-postal-city">{{COMPANY_POSTAL_CITY}}</span>
+        </div>
+        
+        <div class="date-location">
+            <strong>Lieu et date :</strong> <span id="signature-date">{{SIGNATURE_DATE}}</span>
+        </div>
+        
+        <div class="subject">
+            <strong>Objet : Résiliation de l'assurance maladie et/ou complémentaire</strong>
+        </div>
+    </div>
+
+    <div class="content">
+        <p>Madame, Monsieur,</p>
+        
+        <p>Par la présente, je souhaite résilier les contrats d'assurance maladie (LAMal) et d'assurance complémentaire souscrits auprès de votre compagnie pour les personnes suivantes :</p>
+        
+        <div class="person-section" id="person-1" style="{{PERSON_1_DISPLAY}}">
+            <div class="person-title">1. Personne assurée :</div>
+            <div class="field">
+                <span class="field-label">Nom et prénom :</span>
+                <span class="field-value" id="person-1-name">{{PERSON_1_NAME}}</span>
+            </div>
+            <div class="field">
+                <span class="field-label">Date de naissance :</span>
+                <span class="field-value" id="person-1-birthdate">{{PERSON_1_BIRTHDATE}}</span>
+            </div>
+            <div class="field">
+                <span class="field-label">Numéro de police :</span>
+                <span class="field-value" id="person-1-policy">{{PERSON_1_POLICY}}</span>
+            </div>
+        </div>
+        
+        <div class="person-section" id="person-2" style="{{PERSON_2_DISPLAY}}">
+            <div class="person-title">2. Personne assurée :</div>
+            <div class="field">
+                <span class="field-label">Nom et prénom :</span>
+                <span class="field-value" id="person-2-name">{{PERSON_2_NAME}}</span>
+            </div>
+            <div class="field">
+                <span class="field-label">Date de naissance :</span>
+                <span class="field-value" id="person-2-birthdate">{{PERSON_2_BIRTHDATE}}</span>
+            </div>
+            <div class="field">
+                <span class="field-label">Numéro de police :</span>
+                <span class="field-value" id="person-2-policy">{{PERSON_2_POLICY}}</span>
+            </div>
+        </div>
+        
+        <div class="person-section" id="person-3" style="{{PERSON_3_DISPLAY}}">
+            <div class="person-title">3. Personne assurée :</div>
+            <div class="field">
+                <span class="field-label">Nom et prénom :</span>
+                <span class="field-value" id="person-3-name">{{PERSON_3_NAME}}</span>
+            </div>
+            <div class="field">
+                <span class="field-label">Date de naissance :</span>
+                <span class="field-value" id="person-3-birthdate">{{PERSON_3_BIRTHDATE}}</span>
+            </div>
+            <div class="field">
+                <span class="field-label">Numéro de police :</span>
+                <span class="field-value" id="person-3-policy">{{PERSON_3_POLICY}}</span>
+            </div>
+        </div>
+        
+        <div class="person-section" id="person-4" style="{{PERSON_4_DISPLAY}}">
+            <div class="person-title">4. Personne assurée :</div>
+            <div class="field">
+                <span class="field-label">Nom et prénom :</span>
+                <span class="field-value" id="person-4-name">{{PERSON_4_NAME}}</span>
+            </div>
+            <div class="field">
+                <span class="field-label">Date de naissance :</span>
+                <span class="field-value" id="person-4-birthdate">{{PERSON_4_BIRTHDATE}}</span>
+            </div>
+            <div class="field">
+                <span class="field-label">Numéro de police :</span>
+                <span class="field-value" id="person-4-policy">{{PERSON_4_POLICY}}</span>
+            </div>
+        </div>
+        
+        <p>Conformément aux conditions générales de résiliation et à la réglementation en vigueur, je vous prie de prendre note que la résiliation prendra effet :</p>
+        
+        <div class="termination-dates">
+            <div class="field">
+                <span class="field-label"><strong>Pour la LAMal à compter de la date de :</strong></span>
+                <span class="field-value" id="lamal-termination-date">{{LAMAL_TERMINATION_DATE}}</span>
+            </div>
+            <br>
+            <div class="field">
+                <span class="field-label"><strong>Pour la LCA complémentaires :</strong></span>
+                <span class="field-value" id="lca-termination-date">{{LCA_TERMINATION_DATE}}</span>
+            </div>
+        </div>
+        
+        <p>Je vous serais reconnaissant(e) de bien vouloir me confirmer par écrit la réception de cette demande et de m'envoyer un décompte final ainsi qu'une attestation de résiliation.</p>
+        
+        <p>Je vous prie d'agréer, Madame, Monsieur, l'expression de mes salutations distinguées.</p>
+    </div>
+
+    <div class="signature-section">
+        <p><strong>Signature personnes majeures:</strong></p>
+        
+        <div style="margin: 30px 0;">
+            <div id="signature-1" style="{{SIGNATURE_1_DISPLAY}}">
+                <div>{{PERSON_1_NAME}}</div>
+                <div class="signature-line"></div>
+            </div>
+            
+            <div id="signature-2" style="{{SIGNATURE_2_DISPLAY}}; margin-top: 20px;">
+                <div>{{PERSON_2_NAME}}</div>
+                <div class="signature-line"></div>
+            </div>
+            
+            <div id="signature-3" style="{{SIGNATURE_3_DISPLAY}}; margin-top: 20px;">
+                <div>{{PERSON_3_NAME}}</div>
+                <div class="signature-line"></div>
+            </div>
+            
+            <div id="signature-4" style="{{SIGNATURE_4_DISPLAY}}; margin-top: 20px;">
+                <div>{{PERSON_4_NAME}}</div>
+                <div class="signature-line"></div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

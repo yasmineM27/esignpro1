@@ -1,6 +1,107 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import JSZip from 'jszip';
+import fs from 'fs';
+import path from 'path';
+import { OpsioRobustGenerator } from '@/lib/opsio-robust-generator';
+
+// Fonction pour générer les documents OPSIO
+async function generateOpsioDocuments(caseData: any, clientData: any, signatureData?: string) {
+  try {
+    console.log('📄 Génération documents OPSIO pour:', clientData?.nom);
+
+    const documents = [];
+
+    // Données communes pour les templates
+    const templateData = {
+      clientName: clientData?.nom || 'Client',
+      clientAddress: caseData?.clients?.address || 'Adresse non renseignée',
+      clientPostalCity: caseData?.clients?.city ? `${caseData.clients.postal_code || ''} ${caseData.clients.city}` : 'Ville non renseignée',
+      clientBirthdate: caseData?.clients?.date_of_birth || '',
+      clientEmail: clientData?.email || '',
+      clientPhone: clientData?.telephone || '',
+      advisorName: 'Conseiller OPSIO',
+      advisorEmail: 'info@opsio.ch',
+      advisorPhone: '+41 78 305 12 77',
+      insuranceCompany: caseData?.insurance_company || 'Compagnie d\'assurance',
+      policyNumber: caseData?.policy_number || '',
+      lamalTerminationDate: caseData?.termination_date || '',
+      lcaTerminationDate: caseData?.termination_date || '',
+      paymentMethod: 'commission',
+      signatureData: signatureData || null // Signature réelle si fournie
+    };
+
+    // 1. Générer la feuille d'information OPSIO directement
+    try {
+      console.log('📄 Génération directe du document OPSIO...');
+
+      const opsioData = {
+        ...templateData,
+        paymentMethod: 'commission' as 'commission',
+        signatureData: signatureData || undefined
+      };
+
+      const opsioBuffer = await OpsioRobustGenerator.generateRobustOpsioDocument(opsioData);
+
+      if (opsioBuffer) {
+        // Le document OPSIO est maintenant en format Word
+        const fileName = 'Feuille_Information_OPSIO.docx';
+
+        documents.push({
+          name: fileName,
+          content: opsioBuffer,
+          type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        });
+
+        console.log('✅ Document OPSIO généré directement:', fileName);
+        console.log('- Taille:', opsioBuffer.length, 'bytes');
+        console.log('- Type:', 'Word (.docx)');
+      }
+    } catch (error) {
+      console.error('❌ Erreur génération OPSIO:', error);
+    }
+
+    // 2. Générer la lettre de résiliation si applicable
+    if (caseData?.reason_for_termination) {
+      try {
+        const resignationResponse = await fetch('http://localhost:3000/api/documents/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            documentType: 'resignation-letter',
+            clientId: caseData?.clients?.id,
+            data: {
+              ...templateData,
+              persons: [{
+                name: templateData.clientName,
+                birthdate: templateData.clientBirthdate,
+                policyNumber: templateData.policyNumber,
+                isAdult: true
+              }]
+            }
+          })
+        });
+
+        const resignationResult = await resignationResponse.json();
+        if (resignationResult.success) {
+          documents.push({
+            name: 'Lettre_Resiliation_Assurance.html',
+            content: resignationResult.document.content,
+            type: 'resignation-letter'
+          });
+          console.log('✅ Lettre de résiliation générée');
+        }
+      } catch (error) {
+        console.error('❌ Erreur génération résiliation:', error);
+      }
+    }
+
+    return documents;
+  } catch (error) {
+    console.error('❌ Erreur génération documents OPSIO:', error);
+    return [];
+  }
+}
 
 async function handleDownload(caseId: string, clientId: string | null, options: any = {}) {
   try {
@@ -50,7 +151,7 @@ async function handleDownload(caseId: string, clientId: string | null, options: 
     const { data: clientSignatures, error: clientSigError } = await supabaseAdmin
       .from('client_signatures')
       .select('*')
-      .eq('client_id', clientId || caseData.clients.id)
+      .eq('client_id', clientId || caseData.clients?.id)
       .eq('is_active', true);
 
     // Récupérer les documents uploadés par le client
@@ -81,9 +182,9 @@ async function handleDownload(caseId: string, clientId: string | null, options: 
         derniere_modification: caseData.updated_at
       },
       client: {
-        nom: `${caseData.clients.users.first_name} ${caseData.clients.users.last_name}`,
-        email: caseData.clients.users.email,
-        telephone: caseData.clients.users.phone
+        nom: `${caseData.clients?.users?.first_name || 'Prénom'} ${caseData.clients?.users?.last_name || 'Nom'}`,
+        email: caseData.clients?.users?.email || 'email@example.com',
+        telephone: caseData.clients?.users?.phone || 'Non renseigné'
       },
       signatures: signatures?.map(sig => ({
         id: sig.id,
@@ -124,19 +225,104 @@ async function handleDownload(caseId: string, clientId: string | null, options: 
       });
     }
 
-    // Ajouter les documents uploadés par le client
+    // Ajouter les documents uploadés par le client (vrais fichiers)
     if (clientDocuments && clientDocuments.length > 0) {
       const clientDocsFolder = zip.folder('documents-client');
-      clientDocuments.forEach((doc, index) => {
-        // Ajouter les métadonnées
-        clientDocsFolder?.file(`${doc.documenttype}-${index + 1}-info.json`, JSON.stringify({
-          nom: doc.filename,
-          type: doc.documenttype,
-          chemin: doc.filepath,
-          statut: doc.status,
-          date_upload: doc.uploaddate
-        }, null, 2));
-      });
+
+      for (const doc of clientDocuments) {
+        try {
+          // Essayer de lire le fichier réel depuis le système de fichiers
+          let fileContent = null;
+          let fileName = doc.filename;
+
+          // Si le fichier a un chemin, essayer de le lire
+          if (doc.filepath) {
+            try {
+              // Pour les fichiers Supabase Storage
+              if (doc.filepath.startsWith('http')) {
+                console.log(`📥 Téléchargement fichier depuis URL: ${doc.filepath}`);
+                const response = await fetch(doc.filepath);
+                if (response.ok) {
+                  const arrayBuffer = await response.arrayBuffer();
+                  fileContent = Buffer.from(arrayBuffer);
+                  console.log(`✅ Fichier téléchargé: ${fileName} (${fileContent.length} bytes)`);
+                }
+              } else if (doc.filepath.includes('SECURE_')) {
+                // Pour les fichiers Supabase Storage avec chemin sécurisé
+                console.log(`📥 Téléchargement fichier Supabase: ${doc.filepath}`);
+
+                // Construire l'URL Supabase Storage
+                const { supabaseAdmin } = await import('@/lib/supabase');
+                const { data: fileData, error: downloadError } = await supabaseAdmin.storage
+                  .from('client-documents')
+                  .download(doc.filepath);
+
+                if (fileData && !downloadError) {
+                  fileContent = Buffer.from(await fileData.arrayBuffer());
+                  console.log(`✅ Fichier Supabase téléchargé: ${fileName} (${fileContent.length} bytes)`);
+                } else {
+                  console.error(`❌ Erreur téléchargement Supabase:`, downloadError);
+
+                  // Essayer avec l'URL publique
+                  const { data: publicUrlData } = supabaseAdmin.storage
+                    .from('client-documents')
+                    .getPublicUrl(doc.filepath);
+
+                  if (publicUrlData?.publicUrl) {
+                    console.log(`📥 Essai URL publique: ${publicUrlData.publicUrl}`);
+                    const response = await fetch(publicUrlData.publicUrl);
+                    if (response.ok) {
+                      const arrayBuffer = await response.arrayBuffer();
+                      fileContent = Buffer.from(arrayBuffer);
+                      console.log(`✅ Fichier URL publique téléchargé: ${fileName} (${fileContent.length} bytes)`);
+                    }
+                  }
+                }
+              } else {
+                // Pour les fichiers locaux
+                const fullPath = path.join(process.cwd(), 'public', doc.filepath);
+                if (fs.existsSync(fullPath)) {
+                  fileContent = fs.readFileSync(fullPath);
+                  console.log(`✅ Fichier local lu: ${fileName} (${fileContent.length} bytes)`);
+                }
+              }
+            } catch (fileError) {
+              console.error(`❌ Erreur lecture fichier ${fileName}:`, fileError.message);
+            }
+          }
+
+          // Ajouter le fichier réel ou un placeholder
+          if (fileContent) {
+            clientDocsFolder?.file(fileName, fileContent);
+          } else {
+            // Fallback: créer un fichier texte avec les informations
+            const infoContent = `Document: ${doc.filename}
+Type: ${doc.documenttype}
+Taille: ${doc.filesize} bytes
+Statut: ${doc.status}
+Date upload: ${doc.uploaddate}
+Chemin original: ${doc.filepath}
+
+Note: Le fichier original n'a pas pu être récupéré.`;
+
+            clientDocsFolder?.file(`${doc.documenttype}-${fileName}.txt`, infoContent);
+          }
+
+          // Ajouter aussi les métadonnées JSON
+          clientDocsFolder?.file(`${doc.documenttype}-metadata.json`, JSON.stringify({
+            nom: doc.filename,
+            type: doc.documenttype,
+            chemin: doc.filepath,
+            statut: doc.status,
+            date_upload: doc.uploaddate,
+            taille: doc.filesize,
+            mime_type: doc.mimetype
+          }, null, 2));
+
+        } catch (error) {
+          console.error(`❌ Erreur traitement document ${doc.filename}:`, error);
+        }
+      }
     }
 
     // 🆕 Générer des documents Word avec signatures automatiques si demandé
@@ -211,6 +397,38 @@ async function handleDownload(caseId: string, clientId: string | null, options: 
       });
     }
 
+    // 🆕 Générer et ajouter les documents OPSIO
+    try {
+      console.log('📄 Génération des documents OPSIO...');
+      const opsioDocuments = await generateOpsioDocuments(caseData, caseInfo.client, options.signatureData);
+
+      if (opsioDocuments.length > 0) {
+        const opsioFolder = zip.folder('documents-opsio');
+
+        opsioDocuments.forEach(doc => {
+          opsioFolder?.file(doc.name, doc.content);
+          console.log(`✅ Document OPSIO ajouté: ${doc.name}`);
+        });
+
+        // Ajouter les métadonnées des documents OPSIO
+        opsioFolder?.file('_informations-opsio.json', JSON.stringify({
+          documents_generes: opsioDocuments.map(doc => ({
+            nom: doc.name,
+            type: doc.type,
+            taille: doc.content.length,
+            genere_le: new Date().toISOString()
+          })),
+          total_documents: opsioDocuments.length,
+          genere_automatiquement: true
+        }, null, 2));
+
+        console.log(`✅ ${opsioDocuments.length} documents OPSIO générés et ajoutés au ZIP`);
+      }
+    } catch (error) {
+      console.error('❌ Erreur génération documents OPSIO:', error);
+      // Continuer même en cas d'erreur
+    }
+
     // Si aucun document
     if ((!clientDocuments || clientDocuments.length === 0) && (!generatedDocuments || generatedDocuments.length === 0)) {
       zip.file('aucun-document.txt', 'Aucun document n\'a été uploadé ou généré pour ce dossier.');
@@ -236,9 +454,9 @@ async function handleDownload(caseId: string, clientId: string | null, options: 
     const rapport = `RAPPORT DE SYNTHÈSE - DOSSIER ${caseData.case_number}
 =====================================
 
-Client: ${caseData.clients.users.first_name} ${caseData.clients.users.last_name}
-Email: ${caseData.clients.users.email}
-Téléphone: ${caseData.clients.users.phone || 'Non renseigné'}
+Client: ${caseData.clients?.users?.first_name || 'Prénom'} ${caseData.clients?.users?.last_name || 'Nom'}
+Email: ${caseData.clients?.users?.email || 'email@example.com'}
+Téléphone: ${caseData.clients?.users?.phone || 'Non renseigné'}
 
 Assurance:
 - Compagnie: ${caseData.insurance_company}
@@ -272,7 +490,7 @@ Par: Agent eSignPro
     const zipBuffer = await zip.generateAsync({ type: 'nodebuffer' });
 
     // Retourner le ZIP
-    const fileName = `dossier-${caseData.case_number}-${caseData.clients.users.first_name}-${caseData.clients.users.last_name}.zip`;
+    const fileName = `dossier-${caseData.case_number}-${caseData.clients?.users?.first_name || 'client'}-${caseData.clients?.users?.last_name || 'nom'}.zip`;
 
     return new NextResponse(zipBuffer, {
       status: 200,
@@ -322,7 +540,8 @@ export async function POST(request: NextRequest) {
       clientId,
       includeWordDocuments = false,
       includeSignatures = true,
-      generateWordWithSignature = false
+      generateWordWithSignature = false,
+      signatureData = null // Signature réelle en base64
     } = await request.json();
 
     if (!caseId) {
@@ -335,7 +554,8 @@ export async function POST(request: NextRequest) {
     const options = {
       includeWordDocuments,
       includeSignatures,
-      generateWordWithSignature
+      generateWordWithSignature,
+      signatureData
     };
 
     return await handleDownload(caseId, clientId, options);

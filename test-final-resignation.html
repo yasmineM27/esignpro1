@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lettre de Résiliation d'Assurance</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            line-height: 1.6;
+            margin: 40px;
+            color: #000;
+        }
+        .header {
+            margin-bottom: 40px;
+        }
+        .sender-info {
+            margin-bottom: 30px;
+        }
+        .recipient-info {
+            margin: 30px 0;
+            padding: 15px;
+            border: 1px solid #ccc;
+            background-color: #f9f9f9;
+        }
+        .date-location {
+            text-align: right;
+            margin: 20px 0;
+        }
+        .subject {
+            font-weight: bold;
+            margin: 20px 0;
+            text-decoration: underline;
+        }
+        .content {
+            margin: 20px 0;
+        }
+        .person-section {
+            margin: 15px 0;
+            padding: 10px;
+            border-left: 3px solid #0066cc;
+            background-color: #f8f9fa;
+        }
+        .person-title {
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        .field {
+            margin: 5px 0;
+        }
+        .field-label {
+            font-weight: bold;
+            display: inline-block;
+            width: 150px;
+        }
+        .field-value {
+            border-bottom: 1px dotted #666;
+            display: inline-block;
+            min-width: 200px;
+            padding: 2px;
+        }
+        .termination-dates {
+            margin: 20px 0;
+            padding: 15px;
+            border: 2px solid #dc3545;
+            background-color: #fff5f5;
+        }
+        .signature-section {
+            margin-top: 50px;
+        }
+        .signature-line {
+            border-bottom: 1px solid #000;
+            height: 50px;
+            margin: 20px 0;
+            width: 300px;
+        }
+        @media print {
+            body { margin: 20px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="sender-info">
+            <strong>Nom prénom :</strong> <span id="client-name">Jean Dupont Final Test</span><br><br>
+            <strong>Adresse:</strong> <span id="client-address">Rue de la Paix 123</span><br><br>
+            <strong>NPA Ville:</strong> <span id="client-postal-city">1200 Genève</span><br><br>
+        </div>
+        
+        <div class="recipient-info">
+            <strong>Destinataire:</strong><br>
+            <span id="insurance-company">Helsana Assurances SA</span><br>
+            <span id="company-address"></span><br>
+            <span id="company-postal-city"></span>
+        </div>
+        
+        <div class="date-location">
+            <strong>Lieu et date :</strong> <span id="signature-date">Genève, 11/10/2025</span>
+        </div>
+        
+        <div class="subject">
+            <strong>Objet : Résiliation de l'assurance maladie et/ou complémentaire</strong>
+        </div>
+    </div>
+
+    <div class="content">
+        <p>Madame, Monsieur,</p>
+        
+        <p>Par la présente, je souhaite résilier les contrats d'assurance maladie (LAMal) et d'assurance complémentaire souscrits auprès de votre compagnie pour les personnes suivantes :</p>
+        
+        <div class="person-section" id="person-1" style="display: block;">
+            <div class="person-title">1. Personne assurée :</div>
+            <div class="field">
+                <span class="field-label">Nom et prénom :</span>
+                <span class="field-value" id="person-1-name">Jean Dupont Final Test</span>
+            </div>
+            <div class="field">
+                <span class="field-label">Date de naissance :</span>
+                <span class="field-value" id="person-1-birthdate">1980-05-15</span>
+            </div>
+            <div class="field">
+                <span class="field-label">Numéro de police :</span>
+                <span class="field-value" id="person-1-policy">POL123456</span>
+            </div>
+        </div>
+        
+        <div class="person-section" id="person-2" style="display: none;">
+            <div class="person-title">2. Personne assurée :</div>
+            <div class="field">
+                <span class="field-label">Nom et prénom :</span>
+                <span class="field-value" id="person-2-name"></span>
+            </div>
+            <div class="field">
+                <span class="field-label">Date de naissance :</span>
+                <span class="field-value" id="person-2-birthdate"></span>
+            </div>
+            <div class="field">
+                <span class="field-label">Numéro de police :</span>
+                <span class="field-value" id="person-2-policy"></span>
+            </div>
+        </div>
+        
+        <div class="person-section" id="person-3" style="display: none;">
+            <div class="person-title">3. Personne assurée :</div>
+            <div class="field">
+                <span class="field-label">Nom et prénom :</span>
+                <span class="field-value" id="person-3-name"></span>
+            </div>
+            <div class="field">
+                <span class="field-label">Date de naissance :</span>
+                <span class="field-value" id="person-3-birthdate"></span>
+            </div>
+            <div class="field">
+                <span class="field-label">Numéro de police :</span>
+                <span class="field-value" id="person-3-policy"></span>
+            </div>
+        </div>
+        
+        <div class="person-section" id="person-4" style="display: none;">
+            <div class="person-title">4. Personne assurée :</div>
+            <div class="field">
+                <span class="field-label">Nom et prénom :</span>
+                <span class="field-value" id="person-4-name"></span>
+            </div>
+            <div class="field">
+                <span class="field-label">Date de naissance :</span>
+                <span class="field-value" id="person-4-birthdate"></span>
+            </div>
+            <div class="field">
+                <span class="field-label">Numéro de police :</span>
+                <span class="field-value" id="person-4-policy"></span>
+            </div>
+        </div>
+        
+        <p>Conformément aux conditions générales de résiliation et à la réglementation en vigueur, je vous prie de prendre note que la résiliation prendra effet :</p>
+        
+        <div class="termination-dates">
+            <div class="field">
+                <span class="field-label"><strong>Pour la LAMal à compter de la date de :</strong></span>
+                <span class="field-value" id="lamal-termination-date">2024-12-31</span>
+            </div>
+            <br>
+            <div class="field">
+                <span class="field-label"><strong>Pour la LCA complémentaires :</strong></span>
+                <span class="field-value" id="lca-termination-date">2024-11-30</span>
+            </div>
+        </div>
+        
+        <p>Je vous serais reconnaissant(e) de bien vouloir me confirmer par écrit la réception de cette demande et de m'envoyer un décompte final ainsi qu'une attestation de résiliation.</p>
+        
+        <p>Je vous prie d'agréer, Madame, Monsieur, l'expression de mes salutations distinguées.</p>
+    </div>
+
+    <div class="signature-section">
+        <p><strong>Signature personnes majeures:</strong></p>
+        
+        <div style="margin: 30px 0;">
+            <div id="signature-1" style="display: block;">
+                <div>Jean Dupont Final Test</div>
+                <div class="signature-line"></div>
+            </div>
+            
+            <div id="signature-2" style="display: none;; margin-top: 20px;">
+                <div></div>
+                <div class="signature-line"></div>
+            </div>
+            
+            <div id="signature-3" style="display: none;; margin-top: 20px;">
+                <div></div>
+                <div class="signature-line"></div>
+            </div>
+            
+            <div id="signature-4" style="display: none;; margin-top: 20px;">
+                <div></div>
+                <div class="signature-line"></div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

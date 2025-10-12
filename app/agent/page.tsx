@@ -18,6 +18,7 @@ import { AgentSettingsDynamic } from "@/components/agent-settings-dynamic"
 import { AgentDocumentsHistory } from "@/components/agent-documents-history"
 import { DemoWorkflow } from "@/components/demo-workflow"
 import AgentCasesManagement from "@/components/agent-cases-management"
+import DocumentGenerator from "@/components/document-generator"
 
 export default function AgentDashboard() {
   const [activeTab, setActiveTab] = useState("new-case")
@@ -49,7 +50,27 @@ export default function AgentDashboard() {
       case "archive":
         return <AgentArchiveDynamic />
       case "documents":
-        return <AgentDocumentsHistory />
+        return (
+          <div className="space-y-6">
+            <DocumentGenerator
+              caseId="demo-case-001"
+              clientData={{
+                name: "Jean Dupont",
+                address: "Rue de la Paix 123",
+                postalCity: "1200 Genève",
+                birthdate: "1980-05-15",
+                email: "jean.dupont@email.com",
+                phone: "+41 79 123 45 67"
+              }}
+              advisorData={{
+                name: "Marie Martin",
+                email: "marie.martin@opsio.ch",
+                phone: "+41 78 305 12 77"
+              }}
+            />
+            <AgentDocumentsHistory />
+          </div>
+        )
       case "analytics":
         return <AgentAnalyticsDynamic />
       case "demo":

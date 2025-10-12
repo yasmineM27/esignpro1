@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feuille d'information OPSIO</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 11px;
+            line-height: 1.4;
+            margin: 20px;
+            color: #000;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #0066cc;
+            padding-bottom: 10px;
+        }
+        .company-info {
+            font-size: 10px;
+            margin-bottom: 5px;
+        }
+        .title {
+            font-size: 14px;
+            font-weight: bold;
+            margin: 15px 0;
+        }
+        .section {
+            margin: 15px 0;
+        }
+        .section-title {
+            font-weight: bold;
+            font-size: 12px;
+            margin-bottom: 8px;
+        }
+        .client-data {
+            background-color: #f0f8ff;
+            padding: 15px;
+            border: 1px solid #ccc;
+            margin: 10px 0;
+        }
+        .advisor-data {
+            background-color: #f5f5f5;
+            padding: 15px;
+            border: 1px solid #ccc;
+            margin: 10px 0;
+        }
+        .two-column {
+            display: flex;
+            justify-content: space-between;
+        }
+        .column {
+            width: 48%;
+        }
+        .field {
+            margin: 8px 0;
+        }
+        .field-label {
+            font-weight: bold;
+            display: inline-block;
+            width: 120px;
+        }
+        .field-value {
+            border-bottom: 1px dotted #666;
+            display: inline-block;
+            min-width: 200px;
+            padding: 2px;
+        }
+        .checkbox-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 2px solid #0066cc;
+            background-color: #f9f9f9;
+        }
+        .checkbox {
+            margin: 0 10px 0 0;
+        }
+        .signature-section {
+            margin-top: 30px;
+            border-top: 1px solid #ccc;
+            padding-top: 20px;
+        }
+        .signature-box {
+            display: inline-block;
+            width: 45%;
+            margin: 10px 2%;
+            text-align: center;
+        }
+        .signature-line {
+            border-bottom: 1px solid #000;
+            height: 50px;
+            margin: 10px 0;
+        }
+        .page-break {
+            page-break-before: always;
+        }
+        .footer {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            text-align: center;
+            font-size: 9px;
+            border-top: 1px solid #ccc;
+            padding-top: 5px;
+        }
+        @media print {
+            body { margin: 15px; }
+            .page-break { page-break-before: always; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="company-info">OPSIO Sàrl, Avenue de Bel-Air 16, 1225 Chêne-Bourg info@opsio.ch FINMA reg. no F01468622</div>
+        <div style="text-align: right; font-size: 9px;">Page 1 sur 5</div>
+        
+        <div class="title">
+            Feuille d'information du conseiller aux preneurs d'assurance selon l'art. 45 LSA<br>
+            <span style="font-size: 11px; font-weight: normal;">(Loi fédérale sur la surveillance des assurances)</span>
+        </div>
+    </div>
+
+    <div class="two-column">
+        <div class="column">
+            <div class="advisor-data">
+                <strong>Votre conseiller/ère :</strong><br><br>
+                <div class="field">
+                    <span class="field-label">Nom et Prénom:</span>
+                    <span class="field-value" id="advisor-name">{{ADVISOR_NAME}}</span>
+                </div>
+                <div class="field">
+                    <span class="field-label">Email:</span>
+                    <span class="field-value" id="advisor-email">{{ADVISOR_EMAIL}}</span>
+                </div>
+                <div class="field">
+                    <span class="field-label">Téléphone:</span>
+                    <span class="field-value" id="advisor-phone">{{ADVISOR_PHONE}}</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="column">
+            <div class="client-data">
+                <strong>Vos données client:</strong><br><br>
+                <div class="field">
+                    <span class="field-label">Nom et Prénom:</span>
+                    <span class="field-value" id="client-name">{{CLIENT_NAME}}</span>
+                </div>
+                <div class="field">
+                    <span class="field-label">Adresse:</span>
+                    <span class="field-value" id="client-address">{{CLIENT_ADDRESS}}</span>
+                </div>
+                <div class="field">
+                    <span class="field-label">NPA/Localité:</span>
+                    <span class="field-value" id="client-city">{{CLIENT_POSTAL_CITY}}</span>
+                </div>
+                <div class="field">
+                    <span class="field-label">Date de naissance:</span>
+                    <span class="field-value" id="client-birthdate">{{CLIENT_BIRTHDATE}}</span>
+                </div>
+                <div class="field">
+                    <span class="field-label">Email:</span>
+                    <span class="field-value" id="client-email">{{CLIENT_EMAIL}}</span>
+                </div>
+                <div class="field">
+                    <span class="field-label">Numéro de téléphone:</span>
+                    <span class="field-value" id="client-phone">{{CLIENT_PHONE}}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">1. OPSIO Sàrl – Informations concernant l'identité :</div>
+        
+        <div class="two-column">
+            <div class="column">
+                <strong>Siège :</strong><br>
+                OPSIO Sàrl<br>
+                Avenue de Bel-Air 16<br>
+                1225 Chêne-Bourg<br><br>
+                
+                <strong>Téléphone :</strong> +41 78 305 12 77<br>
+                <strong>Site internet :</strong> www.opsio.ch
+            </div>
+            <div class="column">
+                <strong>Bureau principal :</strong><br>
+                OPSIO Sàrl<br>
+                Rue de Savoie 7a<br>
+                1225 Chêne-Bourg<br><br>
+                
+                <strong>Email :</strong> info@opsio.ch
+            </div>
+        </div>
+        
+        <p><strong>Registre du commerce du canton de Genève</strong><br>
+        Numéro de société IDE : CHE-356.207.827<br>
+        Forme juridique : Société à responsabilité limitée</p>
+        
+        <p>Inscription au registre des intermédiaires d'assurances de l'Autorité fédérale de surveillance des marchés financiers (FINMA), numéro au registre : <strong>F01468622</strong>.</p>
+    </div>
+
+    <div class="section">
+        <div class="section-title">2. OPSIO Sàrl est un intermédiaire d'assurance non lié</div>
+        <p>OPSIO Sàrl est un intermédiaire d'assurance indépendant (non lié) pour tous les secteurs d'assurance en vertu de l'art. 40 al. 2 LSA.</p>
+    </div>
+
+    <div class="page-break"></div>
+
+    <div class="header">
+        <div class="company-info">OPSIO Sàrl, Avenue de Bel-Air 16, 1225 Chêne-Bourg info@opsio.ch FINMA reg. no F01468622</div>
+        <div style="text-align: right; font-size: 9px;">Page 2 sur 5</div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">3. Votre conseiller/ère à la clientèle</div>
+        <p>Au début de la coopération, un(e) conseiller/ère de clientèle responsable des assurances du/de la client(e) est désigné(e). Il/elle est la personne de contact direct pour le/la client(e) et est responsable de la gestion de toutes ses questions d'assurance.</p>
+        
+        <p>OPSIO Sàrl ainsi que ses conseillers/ères à la clientèle disposent des enregistrements nécessaires pour exercer les prestations d'intermédiaire en assurance, conformément à la législation suisse sur la surveillance des institutions d'assurance (numéro de registre FINMA F01468622).</p>
+    </div>
+
+    <div class="section">
+        <div class="section-title">4. Informations sur la nature des prestations</div>
+        <p>Le/la client(e) confie la gestion de ses assurances à OPSIO Sàrl moyennant la conclusion d'un contrat d'assurance séparé, dans le sens d'une relation d'affaires basée sur la confiance mutuelle entre les parties. Les informations mentionnées dans le contrat d'assurance individuel qui lie OPSIO Sàrl au/à la client(e) font foi et ne peuvent être modifiées ou complétées que par un document signé par les deux parties contractantes.</p>
+    </div>
+
+    <div class="section">
+        <div class="section-title">5. Relations contractuelles et collaboration avec les compagnies d'assurance</div>
+        <p>OPSIO Sàrl a conclu des accords de collaboration avec les principales compagnies d'assurance disposant de l'agrément de l'Autorité de surveillance des marchés financiers (FINMA). OPSIO Sàrl n'est toutefois pas liée juridiquement, économiquement ou de quelque façon que ce soit à ses partenaires et veille à conserver son indépendance et à œuvrer dans le strict intérêt de ses clients/tes.</p>
+        
+        <p>En relation avec son activité d'intermédiation non liée, OPSIO Sàrl opère dans les branches suivantes et collabore selon des conventions de coopérations avec les sociétés d'assurance suivantes, pour les types d'assurance indiqués :</p>
+    </div>
+
+    <div class="page-break"></div>
+
+    <div class="header">
+        <div class="company-info">OPSIO Sàrl, Avenue de Bel-Air 16, 1225 Chêne-Bourg info@opsio.ch FINMA reg. no F01468622</div>
+        <div style="text-align: right; font-size: 9px;">Page 3 sur 5</div>
+        <div style="text-align: center; font-weight: bold; margin: 10px 0;">
+            Informations conformément à l'article 45 de la loi sur la surveillance des assurances
+        </div>
+    </div>
+
+    <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+        <tr style="background-color: #f0f0f0;">
+            <td style="border: 1px solid #000; padding: 8px; font-weight: bold;">Assurance vie</td>
+            <td style="border: 1px solid #000; padding: 8px;">• LiechtensteinLife (privé 4.5%)</td>
+        </tr>
+        <tr>
+            <td style="border: 1px solid #000; padding: 8px; font-style: italic;">Assurance vie collective, assurance vie individuelle, y compris l'assurance vie en unités de compte</td>
+            <td style="border: 1px solid #000; padding: 8px;"></td>
+        </tr>
+        <tr style="background-color: #f0f0f0;">
+            <td style="border: 1px solid #000; padding: 8px; font-weight: bold;">Assurance personne</td>
+            <td style="border: 1px solid #000; padding: 8px;">
+                • Visana (LaMal 70.-, LCA 12x)<br>
+                • Swica (LaMal 70.-, LCA 12x)<br>
+                • Sympany (LaMal 70.-, LCA 12x)<br>
+                • Assura (LaMal 70.-, LCA 12-16x)<br>
+                • Helsana (LaMal 70.-, LCA 12-16x)
+            </td>
+        </tr>
+        <tr>
+            <td style="border: 1px solid #000; padding: 8px; font-style: italic;">Assurance accident (LAA e LAAC) et maladie collective (PGM), assurance maladie obligatoire LaMal, assurance maladie complémentaire privé LCA</td>
+            <td style="border: 1px solid #000; padding: 8px;"></td>
+        </tr>
+    </table>
+
+    <div class="section">
+        <div class="section-title">6. Informations sur l'indemnisation/rémunération de l'intermédiaire</div>
+        <p>Pour les prestations fournies par OPSIO Sàrl dans le cadre de son activité d'intermédiaire d'assurance, OPSIO Sàrl reçoit de la part des assureurs une rémunération, laquelle prend pour l'essentiel la forme de frais de courtage, calculés en pour cent de la prime d'assurance payée par le/la client(e), ainsi que des commissions d'acquisition (dites una-tantum). Ces rémunérations sont inclues dans les primes des assureurs.</p>
+
+        <p>Les rémunérations perçues par OPSIO Sàrl correspondent à la pratique du marché. Pour chaque type de produit et pour chaque assurance il existe des règles de calcul des rémunérations qui sont variables. Dans la plupart des cas, les règles suivantes s'appliquent :</p>
+
+        <ul style="margin: 10px 0; padding-left: 20px;">
+            <li><strong>Assurance choses et patrimoine :</strong> l'intermédiaire reçoit un courtage (pourcentage des primes payées)</li>
+            <li><strong>Assurance vie :</strong> una-tantum pour la prévoyance privée, commission pour la prévoyance collective</li>
+            <li><strong>Assurance personne :</strong> différents modèles de commission (courtage ou una-tantum) selon les compagnies</li>
+            <li><strong>Assurance juridique :</strong> différents modèles de commission (courtage ou una-tantum) selon les compagnies</li>
+            <li><strong>Assurance animaux :</strong> différents modèles de commission (courtage ou una-tantum) selon les compagnies</li>
+        </ul>
+
+        <p>En signant un contrat de courtage, le/la client(e) confirme qu'il/elle a été expressément informé(e) des modalités de rémunération de OPSIO Sàrl par le biais des commissions versées par les compagnies d'assurance. Il/elle accepte le cas échéant de renoncer à celles-ci, de même que de solliciter toute communication concernant le montant exact de ces indemnisations perçues par OPSIO Sàrl. Cela vaut également pour les montants perçus après la fin du contrat.</p>
+
+        <p>Cela étant, le/la client(e) a aussi été dûment informé(e) qu'il/elle a la possibilité de demander que OPSIO Sàrl ne soit pas rémunérée par la compagnie d'assurance, mais que ses services soient rémunérés par des honoraires payés par le/la client(e) lui/elle-même (cf. chiffre 10 infra).</p>
+    </div>
+
+    <div class="page-break"></div>
+
+    <div class="header">
+        <div class="company-info">OPSIO Sàrl, Avenue de Bel-Air 16, 1225 Chêne-Bourg info@opsio.ch FINMA reg. no F01468622</div>
+        <div style="text-align: right; font-size: 9px;">Page 4 sur 5</div>
+        <div style="text-align: center; font-weight: bold; margin: 10px 0;">
+            Informations conformément à l'article 45 de la loi sur la surveillance des assurances
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">7. Informations sur la protection et la sécurité des données ; confidentialité</div>
+        <p>OPSIO Sàrl garantit que ses collaborateurs/trices traitent les données qui leur sont confiées selon les principes de la législation applicables sur la protection des données. Au cas où une transmission des données du client à l'étranger serait nécessaire dans le cadre du mandat de courtier, OPSIO Sàrl est autorisée à transmettre ces données en respectant la législation applicable en la matière.</p>
+
+        <p>Dans le but de simplifier les procédures d'administration des polices, le/la client(e) accepte que OPSIO Sàrl traite et communique ses données moyennant des applications mises à disposition par les assureurs ou des tiers.</p>
+
+        <p>L'intégralité des données du/de la client(e), ainsi que toutes les informations concernant les activités d'affaires obtenues dans le cadre de l'exercice du mandat avec la clientèle ou d'éventuels mandats assignés par celle-ci sont traitées de façon strictement confidentielle par OPSIO Sàrl, qui les protège contre tout traitement illicite par des mesures techniques et organisationnelles appropriées.</p>
+
+        <p>Les données à caractère confidentielle ne sont rendues accessibles qu'aux collaboratrices et collaborateurs de OPSIO Sàrl. Envers les tiers non concernés par le contrat de courtage et les choix du/de la client(e), OPSIO Sàrl garde le strict secret sur la relation contractuelle avec le client et toutes les autres informations y relatives. OPSIO Sàrl se réserve le droit de transmettre des données à des tiers (tels que des compagnies d'assurance), si cela s'avère nécessaire à l'exécution des prestations de service (notamment pour l'établissement de propositions d'assurances, la collecte d'offres, en lien avec des cas de sinistres, etc.).</p>
+
+        <p>Nous traitons les données aussi longtemps que nos objectifs de traitement le permettent, que les délais de conservation légaux et nos intérêts légitimes l'exigent, en particulier à des fins de documentation et de preuve, ou si un stockage est techniquement nécessaire.</p>
+
+        <p>Les informations sur la manière dont OPSIO Sàrl traite les données des clients/tes figurent dans son Règlement de protection des données qui est publié sur son site internet (www.enosiscourtier.ch) et fait partie intégrante du contrat de courtage.</p>
+    </div>
+
+    <div class="section">
+        <div class="section-title">8. Formation initiale et continue des collaborateurs/trices de OPSIO Sàrl</div>
+        <p>OPSIO Sàrl assure la formation initiale et continue de ses collaborateurs/trices intervenant dans le domaine de l'intermédiation en assurance conformément aux exigences légales.</p>
+
+        <p>Les demandes spécifiques relatives à la formation ou au perfectionnement des intermédiaires d'assurance peuvent être adressées à : OPSIO Sàrl, Avenue de Bel-Air 16, 1225 Chêne-Bourg.</p>
+    </div>
+
+    <div class="page-break"></div>
+
+    <div class="header">
+        <div class="company-info">OPSIO Sàrl, Avenue de Bel-Air 16, 1225 Chêne-Bourg info@opsio.ch FINMA reg. no F01468622</div>
+        <div style="text-align: right; font-size: 9px;">Page 5 sur 5</div>
+        <div style="text-align: center; font-weight: bold; margin: 10px 0;">
+            Informations conformément à l'article 45 de la loi sur la surveillance des assurances
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">9. Informations sur la responsabilité</div>
+        <p>OPSIO Sàrl fournit ses prestations avec la diligence usuelle due en affaires.</p>
+
+        <p>En cas de négligence, d'erreur ou de renseignements erronés en rapport avec l'activité d'intermédiaire, OPSIO Sàrl peut, conformément au contrat et selon la législation suisse applicable, être tenue pour responsable à l'égard du/de la client(e).</p>
+    </div>
+
+    <div class="checkbox-section">
+        <div class="section-title">10. Décision du/de la client(e) sur la rémunération de l'intermédiaire (cf. ch. 6 supra)</div>
+        <label>
+            <input type="checkbox" class="checkbox" id="commission-checkbox" {{COMMISSION_CHECKED}}>
+            Commission de la compagnie d'assurance
+        </label>
+        <label style="margin-left: 50px;">
+            <input type="checkbox" class="checkbox" id="fees-checkbox" {{FEES_CHECKED}}>
+            Honoraires payés par le/la client(e)
+        </label>
+    </div>
+
+    <div class="signature-section">
+        <p>Par la présente, le/la soussigné(e) confirme que le conseiller/ère à la clientèle de OPSIO Sàrl lui a remis le présent document et lui en a dûment explicité le contenu, avant la conclusion du contrat de courtage, respectivement le/la soussigné(e) confirme en avoir pleinement compris le contenu et y adhérer par sa signature.</p>
+        
+        <div style="margin-top: 40px;">
+            <div class="signature-box">
+                <div>Lieu, date</div>
+                <div class="signature-line" id="advisor-signature-date">Genève, {{SIGNATURE_DATE}}</div>
+                <div>Signature Conseiller/ère à la clientèle</div>
+                <div class="signature-line" id="advisor-signature">{{ADVISOR_NAME}}</div>
+            </div>
+
+            <div class="signature-box">
+                <div>Lieu, date</div>
+                <div class="signature-line" id="client-signature-date">Genève, {{SIGNATURE_DATE}}</div>
+                <div>Signature Client(e)</div>
+                <div class="signature-line" id="client-signature">{{CLIENT_NAME}}</div>
+            </div>
+        </div>
+
+        <!-- Bloc de signature électronique automatique -->
+        <div style="margin-top: 30px; padding: 15px; border: 2px solid #0066cc; background-color: #f0f8ff;">
+            <h4 style="margin: 0 0 10px 0; color: #0066cc;">🔒 Signature Électronique Sécurisée</h4>
+            <div style="font-size: 10px; line-height: 1.4;">
+                <strong>Document signé électroniquement le :</strong> {{SIGNATURE_DATE}}<br>
+                <strong>Signataire :</strong> {{CLIENT_NAME}}<br>
+                <strong>Hash de vérification :</strong> <span style="font-family: monospace; background: #fff; padding: 2px 4px;">{{SIGNATURE_HASH}}</span><br>
+                <strong>Adresse IP :</strong> {{SIGNATURE_IP}}<br>
+                <strong>Navigateur :</strong> {{SIGNATURE_USER_AGENT}}<br>
+                <strong>Statut :</strong> ✅ Signature valide et vérifiée
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        OPSIO Sàrl, Avenue de Bel-Air 16, 1225 Chêne-Bourg - info@opsio.ch - FINMA reg. n° F01468622
+    </div>
+</body>
+</html>
