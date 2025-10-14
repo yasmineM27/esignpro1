@@ -6,13 +6,9 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import Image from "next/image"
 import Link from "next/link"
-import { ArrowLeft, Users, FileText, Settings, BarChart3, Shield, Mail, Clock } from "lucide-react"
+import { ArrowLeft, Users, Settings, Clock, FileText, BarChart3, Shield } from "lucide-react"
 import { AdminAgents } from "@/components/admin-agents"
 import { AdminUsers } from "@/components/admin-users"
-import { AdminTemplates } from "@/components/admin-templates"
-import { AdminReports } from "@/components/admin-reports"
-import { AdminSecurity } from "@/components/admin-security"
-import { AdminEmail } from "@/components/admin-email"
 import { AdminSettings } from "@/components/admin-settings"
 
 export default function AdminDashboard() {
@@ -130,42 +126,7 @@ export default function AdminDashboard() {
             <Users className="mr-2 h-4 w-4" />
             Utilisateurs
           </Button>
-          <Button
-            variant={activeSection === "templates" ? "default" : "ghost"}
-            size="sm"
-            onClick={() => setActiveSection("templates")}
-            className={activeSection === "templates" ? "bg-gray-900 text-white" : ""}
-          >
-            <FileText className="mr-2 h-4 w-4" />
-            Templates
-          </Button>
-          <Button
-            variant={activeSection === "reports" ? "default" : "ghost"}
-            size="sm"
-            onClick={() => setActiveSection("reports")}
-            className={activeSection === "reports" ? "bg-gray-900 text-white" : ""}
-          >
-            <BarChart3 className="mr-2 h-4 w-4" />
-            Rapports
-          </Button>
-          <Button
-            variant={activeSection === "security" ? "default" : "ghost"}
-            size="sm"
-            onClick={() => setActiveSection("security")}
-            className={activeSection === "security" ? "bg-gray-900 text-white" : ""}
-          >
-            <Shield className="mr-2 h-4 w-4" />
-            Sécurité
-          </Button>
-          <Button
-            variant={activeSection === "email" ? "default" : "ghost"}
-            size="sm"
-            onClick={() => setActiveSection("email")}
-            className={activeSection === "email" ? "bg-gray-900 text-white" : ""}
-          >
-            <Mail className="mr-2 h-4 w-4" />
-            Email
-          </Button>
+
           <Button
             variant={activeSection === "settings" ? "default" : "ghost"}
             size="sm"
@@ -199,81 +160,7 @@ export default function AdminDashboard() {
               </CardContent>
             </Card>
 
-            <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setActiveSection("templates")}>
-              <CardHeader>
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                    <FileText className="h-5 w-5 text-green-600" />
-                  </div>
-                  <div>
-                    <CardTitle className="text-lg">Templates de Documents</CardTitle>
-                    <CardDescription>Configuration des formulaires</CardDescription>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <Button variant="outline" className="w-full bg-transparent">
-                  Configurer Templates
-                </Button>
-              </CardContent>
-            </Card>
 
-            <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setActiveSection("reports")}>
-              <CardHeader>
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                    <BarChart3 className="h-5 w-5 text-purple-600" />
-                  </div>
-                  <div>
-                    <CardTitle className="text-lg">Rapports & Analytics</CardTitle>
-                    <CardDescription>Statistiques détaillées</CardDescription>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <Button variant="outline" className="w-full bg-transparent">
-                  Voir Rapports
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setActiveSection("security")}>
-              <CardHeader>
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
-                    <Shield className="h-5 w-5 text-red-600" />
-                  </div>
-                  <div>
-                    <CardTitle className="text-lg">Sécurité & Audit</CardTitle>
-                    <CardDescription>Logs, certificats, conformité</CardDescription>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <Button variant="outline" className="w-full bg-transparent">
-                  Audit Trail
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setActiveSection("email")}>
-              <CardHeader>
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
-                    <Mail className="h-5 w-5 text-orange-600" />
-                  </div>
-                  <div>
-                    <CardTitle className="text-lg">Configuration Email</CardTitle>
-                    <CardDescription>Templates, SMTP, notifications</CardDescription>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <Button variant="outline" className="w-full bg-transparent">
-                  Config Email
-                </Button>
-              </CardContent>
-            </Card>
 
             <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setActiveSection("settings")}>
               <CardHeader>
@@ -298,10 +185,6 @@ export default function AdminDashboard() {
 
         {activeSection === "agents" && <AdminAgents />}
         {activeSection === "users" && <AdminUsers />}
-        {activeSection === "templates" && <AdminTemplates />}
-        {activeSection === "reports" && <AdminReports />}
-        {activeSection === "security" && <AdminSecurity />}
-        {activeSection === "email" && <AdminEmail />}
         {activeSection === "settings" && <AdminSettings />}
       </div>
     </div>
