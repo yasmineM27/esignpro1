@@ -13,6 +13,11 @@ import {
   TableCell,
   WidthType,
   PageBreak,
+  Header,
+  Footer,
+  BorderStyle,
+  ShadingType,
+  UnderlineType,
 } from "docx";
 
 export interface OpsioRobustData {
@@ -41,15 +46,26 @@ export interface OpsioRobustData {
  * Génère un .docx reprenant le contenu du PDF "Art 45 - OPSIO" et remplit les champs fournis.
  */
 export class OpsioRobustGenerator {
-  // chemin par défaut du logo (fichier uploadé)
-  static DEFAULT_LOGO_PATH = "/mnt/data/d99fbe2e-1cd0-4295-ad7b-bfc1a275016a.png";
+  // chemin par défaut du logo OPSIO
+  static DEFAULT_LOGO_PATH = "public/images/image.png";
 
   /**
-   * Génère un document Word OPSIO COMPLET avec toutes les sections 1-10
+   * Génère un document Word OPSIO COMPLET avec design professionnel et logo
    */
   static async generateRobustOpsioDocument(data: OpsioRobustData): Promise<Buffer> {
     try {
       const currentDate = new Date().toLocaleDateString('fr-CH')
+
+      // Charger le logo OPSIO
+      let logoBuffer: Buffer | null = null;
+      try {
+        const logoPath = data.logoPath || this.DEFAULT_LOGO_PATH;
+        if (fs.existsSync(logoPath)) {
+          logoBuffer = fs.readFileSync(logoPath);
+        }
+      } catch (error) {
+        console.log('Logo non trouvé, génération sans logo');
+      }
 
       const doc = new Document({
         sections: [
@@ -57,59 +73,85 @@ export class OpsioRobustGenerator {
             properties: {
               page: {
                 margin: {
-                  top: 1440, // 1 inch
-                  right: 1440,
-                  bottom: 1440,
-                  left: 1440,
+                  top: 1200, // Marges réduites pour plus d'espace
+                  right: 1200,
+                  bottom: 1200,
+                  left: 1200,
                 },
               },
             },
+            footers: {
+              default: new Footer({
+                children: [
+                  new Paragraph({
+                    children: [
+                      new TextRun({
+                        text: "OPSIO Sàrl, Avenue de Bel-Air 16, 1225 Chêne-Bourg",
+                        size: 18,
+                      }),
+                    ],
+                    alignment: AlignmentType.CENTER,
+                    spacing: { after: 100 },
+                  }),
+                  new Paragraph({
+                    children: [
+                      new TextRun({
+                        text: "info@opsio.ch  FINMA reg. no F01468622",
+                        size: 18,
+                      }),
+                    ],
+                    alignment: AlignmentType.CENTER,
+                    spacing: { after: 100 },
+                  }),
+                  new Paragraph({
+                    children: [
+                      new TextRun({
+                        text: "Page 1 sur 5",
+                        size: 18,
+                      }),
+                    ],
+                    alignment: AlignmentType.CENTER,
+                    spacing: { after: 100 },
+                  }),
+                  new Paragraph({
+                    children: [
+                      new TextRun({
+                        text: "Informations conformément à l'article 45 de la loi sur la surveillance des assurances",
+                        size: 16,
+                        italics: true,
+                      }),
+                    ],
+                    alignment: AlignmentType.CENTER,
+                  }),
+                ],
+              }),
+            },
             children: [
-              // En-tête OPSIO
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: "OPSIO Sàrl, Avenue de Bel-Air 16, 1225 Chêne-Bourg",
-                    size: 20,
-                  }),
-                ],
-                alignment: AlignmentType.CENTER,
-                spacing: { after: 200 },
-              }),
+              // Logo OPSIO en en-tête
+              ...(logoBuffer ? [
+                new Paragraph({
+                  children: [
+                    new ImageRun({
+                      data: logoBuffer,
+                      transformation: { width: 200, height: 80 },
+                    }),
+                  ],
+                  alignment: AlignmentType.LEFT,
+                  spacing: { after: 300 },
+                }),
+              ] : []),
 
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: "info@opsio.ch  FINMA reg. no F01468622",
-                    size: 20,
-                  }),
-                ],
-                alignment: AlignmentType.CENTER,
-                spacing: { after: 400 },
-              }),
-
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: "Page 1 sur 5",
-                    size: 18,
-                  }),
-                ],
-                alignment: AlignmentType.CENTER,
-                spacing: { after: 600 },
-              }),
-
-              // Titre principal
+              // Titre principal avec design professionnel
               new Paragraph({
                 children: [
                   new TextRun({
                     text: "Feuille d'information du conseiller aux preneurs d'assurance selon l'art. 45 LSA",
                     bold: true,
-                    size: 24,
+                    size: 26,
                   }),
                 ],
-                alignment: AlignmentType.CENTER,
-                spacing: { after: 200 },
+                alignment: AlignmentType.LEFT,
+                spacing: { after: 150 },
               }),
 
               new Paragraph({
@@ -120,89 +162,174 @@ export class OpsioRobustGenerator {
                     italics: true,
                   }),
                 ],
-                alignment: AlignmentType.CENTER,
-                spacing: { after: 600 },
-              }),
-
-              // Section Conseiller et Données client
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: "Votre conseiller/ère :",
-                    bold: true,
-                    size: 22,
-                  }),
-                  new TextRun({
-                    text: "                                    ",
-                    size: 22,
-                  }),
-                  new TextRun({
-                    text: "Vos données client:",
-                    bold: true,
-                    size: 22,
-                  }),
-                ],
+                alignment: AlignmentType.LEFT,
                 spacing: { after: 400 },
               }),
 
+              // Ligne de séparation
               new Paragraph({
                 children: [
                   new TextRun({
-                    text: `Nom et Prénom: ${data.clientName || '................................ ....................'}`,
+                    text: "_______________________________________________________________",
                     size: 20,
                   }),
                 ],
-                spacing: { after: 200 },
+                alignment: AlignmentType.LEFT,
+                spacing: { after: 400 },
               }),
 
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: `Adresse: ${data.clientAddress || '................................ ...............................'}`,
-                    size: 20,
+              // Tableau à deux colonnes : Conseiller et Données client
+              new Table({
+                width: {
+                  size: 100,
+                  type: WidthType.PERCENTAGE,
+                },
+                rows: [
+                  // En-têtes des colonnes
+                  new TableRow({
+                    children: [
+                      new TableCell({
+                        children: [
+                          new Paragraph({
+                            children: [
+                              new TextRun({
+                                text: "Votre conseiller/ère :",
+                                bold: true,
+                                size: 22,
+                              }),
+                            ],
+                            spacing: { after: 200 },
+                          }),
+                        ],
+                        width: {
+                          size: 50,
+                          type: WidthType.PERCENTAGE,
+                        },
+                      }),
+                      new TableCell({
+                        children: [
+                          new Paragraph({
+                            children: [
+                              new TextRun({
+                                text: "Vos données client:",
+                                bold: true,
+                                size: 22,
+                              }),
+                            ],
+                            spacing: { after: 200 },
+                          }),
+                        ],
+                        width: {
+                          size: 50,
+                          type: WidthType.PERCENTAGE,
+                        },
+                      }),
+                    ],
+                  }),
+                  // Contenu des colonnes
+                  new TableRow({
+                    children: [
+                      // Colonne conseiller (avec espace pour photo)
+                      new TableCell({
+                        children: [
+                          // Espace pour photo du conseiller
+                          new Paragraph({
+                            children: [
+                              new TextRun({
+                                text: "                    ",
+                                size: 20,
+                              }),
+                            ],
+                            spacing: { after: 1200 }, // Espace équivalent à une photo
+                          }),
+                        ],
+                        width: {
+                          size: 50,
+                          type: WidthType.PERCENTAGE,
+                        },
+                        shading: {
+                          type: ShadingType.SOLID,
+                          color: "F0F0F0", // Gris clair pour simuler l'espace photo
+                        },
+                      }),
+                      // Colonne données client
+                      new TableCell({
+                        children: [
+                          new Paragraph({
+                            children: [
+                              new TextRun({
+                                text: `Nom et Prénom: ${data.clientName || '................................ ....................'}`,
+                                size: 20,
+                              }),
+                            ],
+                            spacing: { after: 200 },
+                          }),
+                          new Paragraph({
+                            children: [
+                              new TextRun({
+                                text: `Adresse: ${data.clientAddress || '................................ ...............................'}`,
+                                size: 20,
+                              }),
+                            ],
+                            spacing: { after: 200 },
+                          }),
+                          new Paragraph({
+                            children: [
+                              new TextRun({
+                                text: `NPA/Localité: ${data.clientPostalCity || '................................ .......................'}`,
+                                size: 20,
+                              }),
+                            ],
+                            spacing: { after: 200 },
+                          }),
+                          new Paragraph({
+                            children: [
+                              new TextRun({
+                                text: `Date de naissance: ${data.clientBirthdate || '................................ .....................'}`,
+                                size: 20,
+                              }),
+                            ],
+                            spacing: { after: 200 },
+                          }),
+                          new Paragraph({
+                            children: [
+                              new TextRun({
+                                text: `Email: ${data.clientEmail || '................................ ..............................'}`,
+                                size: 20,
+                              }),
+                            ],
+                            spacing: { after: 200 },
+                          }),
+                          new Paragraph({
+                            children: [
+                              new TextRun({
+                                text: `Numéro de téléphone: ${data.clientPhone || '................................ ...................'}`,
+                                size: 20,
+                              }),
+                            ],
+                            spacing: { after: 200 },
+                          }),
+                        ],
+                        width: {
+                          size: 50,
+                          type: WidthType.PERCENTAGE,
+                        },
+                      }),
+                    ],
                   }),
                 ],
-                spacing: { after: 200 },
               }),
 
+              // Ligne de séparation après le tableau
               new Paragraph({
                 children: [
                   new TextRun({
-                    text: `NPA/Localité: ${data.clientPostalCity || '................................ .......................'}`,
+                    text: "_______________________________________________________________",
                     size: 20,
                   }),
                 ],
-                spacing: { after: 200 },
-              }),
-
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: `Date de naissance: ${data.clientBirthdate || '................................ .....................'}`,
-                    size: 20,
-                  }),
-                ],
-                spacing: { after: 200 },
-              }),
-
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: `Email: ${data.clientEmail || '................................ ..............................'}`,
-                    size: 20,
-                  }),
-                ],
-                spacing: { after: 200 },
-              }),
-
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: `Numéro de téléphone: ${data.clientPhone || '...................................................'}`,
-                    size: 20,
-                  }),
-                ],
-                spacing: { after: 600 },
+                alignment: AlignmentType.LEFT,
+                spacing: { before: 400, after: 400 },
               }),
 
               // Section 1
@@ -476,97 +603,122 @@ export class OpsioRobustGenerator {
                 spacing: { after: 400 },
               }),
 
-              // Tableau des assurances
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: "Assurance vie",
-                    bold: true,
-                    size: 20,
+              // Tableau professionnel des compagnies d'assurance
+              new Table({
+                width: {
+                  size: 100,
+                  type: WidthType.PERCENTAGE,
+                },
+                rows: [
+                  // Ligne Assurance vie
+                  new TableRow({
+                    children: [
+                      new TableCell({
+                        children: [
+                          new Paragraph({
+                            children: [
+                              new TextRun({
+                                text: "Assurance vie",
+                                bold: true,
+                                size: 18,
+                              }),
+                            ],
+                          }),
+                          new Paragraph({
+                            children: [
+                              new TextRun({
+                                text: "Assurance de capitaux, assurance vie individuelle, y compris l'assurance vie et de compte de prévoyance",
+                                size: 16,
+                              }),
+                            ],
+                          }),
+                        ],
+                        width: {
+                          size: 50,
+                          type: WidthType.PERCENTAGE,
+                        },
+                      }),
+                      new TableCell({
+                        children: [
+                          new Paragraph({
+                            children: [
+                              new TextRun({
+                                text: "• LiechtensteinLife (privé 4.5%)",
+                                size: 16,
+                              }),
+                            ],
+                          }),
+                        ],
+                        width: {
+                          size: 50,
+                          type: WidthType.PERCENTAGE,
+                        },
+                      }),
+                    ],
+                  }),
+                  // Ligne Assurance personne
+                  new TableRow({
+                    children: [
+                      new TableCell({
+                        children: [
+                          new Paragraph({
+                            children: [
+                              new TextRun({
+                                text: "Assurance personne",
+                                bold: true,
+                                size: 18,
+                              }),
+                            ],
+                          }),
+                          new Paragraph({
+                            children: [
+                              new TextRun({
+                                text: "Assurance accident (LAA et LAAC) et maladie collective (KTG), assurance maladie obligatoire (LAMal), assurance maladie complémentaire privé LCA",
+                                size: 16,
+                              }),
+                            ],
+                          }),
+                        ],
+                      }),
+                      new TableCell({
+                        children: [
+                          new Paragraph({
+                            children: [
+                              new TextRun({
+                                text: "• Visana (LaMal 70.-, LCA 12x)",
+                                size: 16,
+                              }),
+                            ],
+                          }),
+                          new Paragraph({
+                            children: [
+                              new TextRun({
+                                text: "• Swica (LaMal 70.-, LCA 12x)",
+                                size: 16,
+                              }),
+                            ],
+                          }),
+                          new Paragraph({
+                            children: [
+                              new TextRun({
+                                text: "• Sympany (LaMal 70.-, LCA 12x)",
+                                size: 16,
+                              }),
+                            ],
+                          }),
+                          new Paragraph({
+                            children: [
+                              new TextRun({
+                                text: "• Assura (LaMal 70.-, LCA 12-16x)",
+                                size: 16,
+                              }),
+                            ],
+                          }),
+                        ],
+                      }),
+                    ],
                   }),
                 ],
-                spacing: { after: 200 },
-              }),
-
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: "Assurance vie collective, assurance vie individuelle, y compris l'assurance vie en unités de compte",
-                    size: 20,
-                  }),
-                ],
-                spacing: { after: 100 },
-              }),
-
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: "• LiechtensteinLife (privé 4.5%)",
-                    size: 20,
-                  }),
-                ],
-                spacing: { after: 400 },
-              }),
-
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: "Assurance personne",
-                    bold: true,
-                    size: 20,
-                  }),
-                ],
-                spacing: { after: 200 },
-              }),
-
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: "Assurance accident (LAA e LAAC) et maladie collective (PGM), assurance maladie obligatoire LaMal, assurance maladie complémentaire privé LCA",
-                    size: 20,
-                  }),
-                ],
-                spacing: { after: 100 },
-              }),
-
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: "• Visana (LaMal 70.-, LCA 12x)",
-                    size: 20,
-                  }),
-                ],
-                spacing: { after: 100 },
-              }),
-
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: "• Swica (LaMal 70.-, LCA 12x)",
-                    size: 20,
-                  }),
-                ],
-                spacing: { after: 100 },
-              }),
-
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: "• Sympany (LaMal 70.-, LCA 12x)",
-                    size: 20,
-                  }),
-                ],
-                spacing: { after: 100 },
-              }),
-
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: "• Assura (LaMal 70.-, LCA 12-16x)",
-                    size: 20,
-                  }),
-                ],
-                spacing: { after: 100 },
               }),
 
               new Paragraph({
@@ -611,54 +763,99 @@ export class OpsioRobustGenerator {
                 spacing: { after: 300 },
               }),
 
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: "Assurance choses et patrimoine : l'intermédiaire reçoit un courtage (pourcentage des primes payées)",
-                    size: 20,
+              // Tableau professionnel des rémunérations
+              new Table({
+                width: {
+                  size: 100,
+                  type: WidthType.PERCENTAGE,
+                },
+                rows: [
+                  // Assurance choses et patrimoine
+                  new TableRow({
+                    children: [
+                      new TableCell({
+                        children: [
+                          new Paragraph({
+                            children: [
+                              new TextRun({
+                                text: "Assurance choses et patrimoine : l'intermédiaire reçoit un courtage (pourcentage des primes payées)",
+                                size: 16,
+                              }),
+                            ],
+                          }),
+                        ],
+                      }),
+                    ],
+                  }),
+                  // Assurance vie
+                  new TableRow({
+                    children: [
+                      new TableCell({
+                        children: [
+                          new Paragraph({
+                            children: [
+                              new TextRun({
+                                text: "Assurance vie : una-tantum pour la prévoyance privée, commission pour la prévoyance collective",
+                                size: 16,
+                              }),
+                            ],
+                          }),
+                        ],
+                      }),
+                    ],
+                  }),
+                  // Assurance personne
+                  new TableRow({
+                    children: [
+                      new TableCell({
+                        children: [
+                          new Paragraph({
+                            children: [
+                              new TextRun({
+                                text: "Assurance personne : différents modèles de commission (courtage ou una-tantum) selon les compagnies",
+                                size: 16,
+                              }),
+                            ],
+                          }),
+                        ],
+                      }),
+                    ],
+                  }),
+                  // Assurance juridique
+                  new TableRow({
+                    children: [
+                      new TableCell({
+                        children: [
+                          new Paragraph({
+                            children: [
+                              new TextRun({
+                                text: "Assurance juridique : différents modèles de commission (courtage ou una-tantum) selon les compagnies",
+                                size: 16,
+                              }),
+                            ],
+                          }),
+                        ],
+                      }),
+                    ],
+                  }),
+                  // Assurance animaux
+                  new TableRow({
+                    children: [
+                      new TableCell({
+                        children: [
+                          new Paragraph({
+                            children: [
+                              new TextRun({
+                                text: "Assurance animaux : différents modèles de commission (courtage ou una-tantum) selon les compagnies",
+                                size: 16,
+                              }),
+                            ],
+                          }),
+                        ],
+                      }),
+                    ],
                   }),
                 ],
-                spacing: { after: 100 },
-              }),
-
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: "Assurance vie : una-tantum pour la prévoyance privée, commission pour la prévoyance collective",
-                    size: 20,
-                  }),
-                ],
-                spacing: { after: 100 },
-              }),
-
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: "Assurance personne : différents modèles de commission (courtage ou una-tantum) selon les compagnies",
-                    size: 20,
-                  }),
-                ],
-                spacing: { after: 100 },
-              }),
-
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: "Assurance juridique : différents modèles de commission (courtage ou una-tantum) selon les compagnies",
-                    size: 20,
-                  }),
-                ],
-                spacing: { after: 100 },
-              }),
-
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: "Assurance animaux : différents modèles de commission (courtage ou una-tantum) selon les compagnies",
-                    size: 20,
-                  }),
-                ],
-                spacing: { after: 300 },
               }),
 
               new Paragraph({

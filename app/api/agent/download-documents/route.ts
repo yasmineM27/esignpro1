@@ -373,58 +373,7 @@ Note: Le fichier original n'a pas pu être récupéré.`;
       }
     }
 
-    // 🆕 Générer des documents Word avec signatures automatiques si demandé
-    if (options.generateWordWithSignature || options.includeWordDocuments) {
-      const wordDocsFolder = zip.folder('documents-word-avec-signatures');
-
-      // Récupérer la signature client (système centralisé)
-      let signatureData = null;
-      if (clientSignatures && clientSignatures.length > 0) {
-        signatureData = clientSignatures[0].signature_data;
-        console.log('✅ Signature client récupérée depuis client_signatures');
-      }
-
-      if (signatureData) {
-        try {
-          // Importer le générateur de documents Word
-          const { DocxGenerator } = await import('@/lib/docx-generator');
-
-          // Préparer les données client pour le document
-          const clientDataForDoc = {
-            nomPrenom: `${caseData.clients.users.first_name} ${caseData.clients.users.last_name}`,
-            nom: caseData.clients.users.last_name,
-            prenom: caseData.clients.users.first_name,
-            dateNaissance: caseData.clients.date_of_birth || '',
-            email: caseData.clients.users.email,
-            telephone: caseData.clients.users.phone || '',
-            destinataire: caseData.insurance_company,
-            numeroPolice: caseData.policy_number,
-            typeFormulaire: caseData.policy_type,
-            dateLamal: caseData.termination_date,
-            dateLCA: caseData.termination_date,
-            adresse: caseData.clients.address || '',
-            npa: caseData.clients.postal_code || '',
-            ville: caseData.clients.city || '',
-            npaVille: `${caseData.clients.postal_code || ''} ${caseData.clients.city || ''}`.trim(),
-            personnes: [] // Pas de personnes supplémentaires pour l'instant
-          };
-
-          // Générer le document Word avec signature
-          const wordBuffer = await DocxGenerator.generateResignationDocument(clientDataForDoc, signatureData);
-
-          // Ajouter le document Word au ZIP
-          wordDocsFolder?.file(
-            `Lettre-Resiliation-${caseData.case_number}-SIGNE.docx`,
-            wordBuffer
-          );
-
-          console.log('✅ Document Word avec signature ajouté au ZIP');
-        } catch (error) {
-          console.error('❌ Erreur génération document Word:', error);
-        }
-      }
-    }
-
+    //
     // Ajouter les documents générés (anciens)
     if (generatedDocuments && generatedDocuments.length > 0) {
       const genDocsFolder = zip.folder('documents-generes');
