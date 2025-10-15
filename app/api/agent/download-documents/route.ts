@@ -13,11 +13,18 @@ async function generateOpsioDocuments(caseData: any, clientData: any, signatureD
     const documents = [];
 
     // Récupérer les données complètes du client depuis la table clients (comme dans download-all-documents)
-    const { data: clientDetails } = await supabaseAdmin
+    const clientInfo = Array.isArray(caseData?.clients) ? caseData.clients[0] : caseData?.clients;
+    const { data: clientDetails, error: clientDetailsError } = await supabaseAdmin
       .from('clients')
       .select('address, city, postal_code, country, date_of_birth')
-      .eq('id', caseData?.clients?.id || caseData?.client_id)
+      .eq('id', clientInfo?.id)
       .single();
+
+    if (clientDetailsError) {
+      console.error('❌ Erreur récupération détails client:', clientDetailsError);
+    } else {
+      console.log('✅ Détails client récupérés:', clientDetails);
+    }
 
     // Construire l'adresse complète
     let fullAddress = '';
@@ -88,18 +95,39 @@ async function generateOpsioDocuments(caseData: any, clientData: any, signatureD
       // Importer le générateur de documents Word
       const { DocxGenerator } = await import('@/lib/docx-generator');
 
+      // Séparer le nom et prénom pour l'interface ClientData
+      const nameParts = templateData.clientName.split(' ');
+      const prenom = nameParts[0] || 'Prénom';
+      const nom = nameParts.slice(1).join(' ') || 'Nom';
+
       const clientDataForResignation = {
-        nomPrenom: templateData.clientName,
-        adresse: templateData.clientAddress,
-        npaVille: templateData.clientPostalCity,
+        // Champs séparés requis par l'interface ClientData
+        nom: nom,
+        prenom: prenom,
+        dateNaissance: templateData.clientBirthdate || '',
+        numeroPolice: templateData.policyNumber || '',
+        email: templateData.clientEmail || '',
+
+        // Adresse séparée
+        adresse: templateData.clientAddress || '',
+        npa: templateData.clientPostalCity.split(' ')[0] || '',
+        ville: templateData.clientPostalCity.split(' ').slice(1).join(' ') || '',
+
+        // Type et destinataire
+        typeFormulaire: 'resiliation' as const,
+        destinataire: templateData.insuranceCompany || 'Compagnie d\'assurance',
         lieuDate: `Genève, le ${new Date().toLocaleDateString('fr-CH')}`,
-        compagnieAssurance: templateData.insuranceCompany,
-        numeroPoliceLAMal: templateData.policyNumber,
-        numeroPoliceLCA: templateData.policyNumber,
-        dateResiliationLAMal: templateData.lamalTerminationDate,
-        dateResiliationLCA: templateData.lcaTerminationDate,
-        motifResiliation: 'Changement de situation',
-        personnes: [] // Pas de personnes supplémentaires pour l'instant
+
+        // Personnes supplémentaires
+        personnes: [],
+
+        // Dates spécifiques
+        dateLamal: templateData.lamalTerminationDate || '',
+        dateLCA: templateData.lcaTerminationDate || '',
+
+        // Champs legacy pour compatibilité
+        nomPrenom: templateData.clientName,
+        npaVille: templateData.clientPostalCity
       };
 
       const resignationBuffer = await DocxGenerator.generateResignationDocument(clientDataForResignation, signatureData);
@@ -162,10 +190,12 @@ async function handleDownload(caseId: string, clientId: string | null, options: 
     }
 
     // Récupérer les signatures client (système centralisé)
+    const clientInfo = Array.isArray(caseData?.clients) ? caseData.clients[0] : caseData?.clients;
+    const userInfo = Array.isArray(clientInfo?.users) ? clientInfo.users[0] : clientInfo?.users;
     const { data: clientSignatures, error: clientSigError } = await supabaseAdmin
       .from('client_signatures')
       .select('*')
-      .eq('client_id', clientId || caseData.clients?.id)
+      .eq('client_id', clientId || clientInfo?.id)
       .eq('is_active', true);
 
     // Plus d'utilisation de l'ancienne table signatures
@@ -199,9 +229,9 @@ async function handleDownload(caseId: string, clientId: string | null, options: 
         derniere_modification: caseData.updated_at
       },
       client: {
-        nom: `${caseData.clients?.users?.first_name || 'Prénom'} ${caseData.clients?.users?.last_name || 'Nom'}`,
-        email: caseData.clients?.users?.email || 'email@example.com',
-        telephone: caseData.clients?.users?.phone || 'Non renseigné'
+        nom: `${userInfo?.first_name || 'Prénom'} ${userInfo?.last_name || 'Nom'}`,
+        email: userInfo?.email || 'email@example.com',
+        telephone: userInfo?.phone || 'Non renseigné'
       },
       signatures_client: clientSignatures?.map(sig => ({
         id: sig.id,
@@ -415,7 +445,15 @@ Note: Le fichier original n'a pas pu être récupéré.`;
     // 🆕 Générer et ajouter les documents OPSIO
     try {
       console.log('📄 Génération des documents OPSIO...');
-      const opsioDocuments = await generateOpsioDocuments(caseData, caseInfo.client, options.signatureData);
+
+      // Récupérer la signature client pour les documents OPSIO
+      let signatureDataForOpsio = options.signatureData;
+      if (!signatureDataForOpsio && clientSignatures && clientSignatures.length > 0) {
+        signatureDataForOpsio = clientSignatures[0].signature_data;
+        console.log('✅ Signature client récupérée pour OPSIO depuis client_signatures');
+      }
+
+      const opsioDocuments = await generateOpsioDocuments(caseData, caseInfo.client, signatureDataForOpsio);
 
       if (opsioDocuments.length > 0) {
         const opsioFolder = zip.folder('documents-opsio');

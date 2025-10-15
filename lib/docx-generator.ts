@@ -326,57 +326,85 @@ export class DocxGenerator {
    * Génère un document Word (.docx) de résiliation d'assurance
    */
   static async generateResignationDocument(clientData: ClientData, signatureDataUrl?: string): Promise<Buffer> {
-    // Créer les paragraphes du document
+    // Créer les paragraphes du document avec design professionnel
     const children = [
-      // En-tête avec informations du demandeur
+      // En-tête expéditeur avec style professionnel
       new Paragraph({
         children: [
           new TextRun({
-            text: `Nom prénom : ${clientData.nomPrenom}`,
-            bold: false,
-            size: 24, // 12pt
+            text: `${clientData.prenom} ${clientData.nom}`,
+            bold: true,
+            size: 28, // 14pt
           }),
         ],
-        spacing: { after: 200 },
+        spacing: { after: 150 },
       }),
 
       new Paragraph({
         children: [
           new TextRun({
-            text: `Adresse: ${clientData.adresse}`,
+            text: `${clientData.adresse}`,
             size: 24,
           }),
         ],
-        spacing: { after: 200 },
+        spacing: { after: 100 },
       }),
 
       new Paragraph({
         children: [
           new TextRun({
-            text: `NPA Ville: ${clientData.npaVille}`,
+            text: `${clientData.npa} ${clientData.ville}`,
             size: 24,
           }),
         ],
-        spacing: { after: 200 },
+        spacing: { after: 100 },
       }),
 
       new Paragraph({
         children: [
           new TextRun({
-            text: `Lieu et date : ${clientData.lieuDate}`,
+            text: `Email: ${clientData.email}`,
             size: 24,
           }),
         ],
+        spacing: { after: 300 },
+      }),
+
+      // Destinataire avec style professionnel
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: `${clientData.destinataire}`,
+            bold: true,
+            size: 26,
+          }),
+        ],
+        spacing: { after: 300 },
+      }),
+
+      // Lieu et date aligné à droite
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: `${clientData.lieuDate}`,
+            size: 24,
+            italics: true,
+          }),
+        ],
+        alignment: AlignmentType.RIGHT,
         spacing: { after: 400 },
       }),
 
-      // Objet
+      // Objet avec style professionnel
       new Paragraph({
         children: [
           new TextRun({
             text: "Objet : Résiliation de l'assurance maladie et/ou complémentaire",
             bold: true,
-            size: 24,
+            size: 26,
+            underline: {
+              type: UnderlineType.SINGLE,
+            },
           }),
         ],
         spacing: { after: 400 },
@@ -390,21 +418,10 @@ export class DocxGenerator {
             size: 24,
           }),
         ],
-        spacing: { after: 200 },
+        spacing: { after: 300 },
       }),
 
-      // Destinataire
-      new Paragraph({
-        children: [
-          new TextRun({
-            text: `Destinataire: ${clientData.destinataire}`,
-            size: 24,
-          }),
-        ],
-        spacing: { after: 200 },
-      }),
-
-      // Corps du texte
+      // Corps du texte avec justification
       new Paragraph({
         children: [
           new TextRun({
@@ -412,34 +429,50 @@ export class DocxGenerator {
             size: 24,
           }),
         ],
+        alignment: AlignmentType.JUSTIFIED,
         spacing: { after: 400 },
       }),
     ]
 
-    // Ajouter le demandeur principal
+    // Ajouter le demandeur principal avec style amélioré
     children.push(
       new Paragraph({
         children: [
           new TextRun({
-            text: "1. Nom et prénom :",
+            text: "1. Nom et prénom : ",
+            bold: true,
+            size: 24,
+          }),
+          new TextRun({
+            text: `${clientData.prenom} ${clientData.nom}`,
             size: 24,
           }),
         ],
-        spacing: { after: 100 },
+        spacing: { after: 150 },
       }),
       new Paragraph({
         children: [
           new TextRun({
-            text: `   ○ Date de naissance : ${this.formatDate(clientData.dateNaissance)}`,
+            text: "   ○ Date de naissance : ",
+            size: 24,
+          }),
+          new TextRun({
+            text: `${this.formatDate(clientData.dateNaissance)}`,
+            bold: true,
             size: 24,
           }),
         ],
-        spacing: { after: 100 },
+        spacing: { after: 150 },
       }),
       new Paragraph({
         children: [
           new TextRun({
-            text: `   ○ Numéro de police : ${clientData.numeroPolice}`,
+            text: "   ○ Numéro de police : ",
+            size: 24,
+          }),
+          new TextRun({
+            text: `${clientData.numeroPolice}`,
+            bold: true,
             size: 24,
           }),
         ],
