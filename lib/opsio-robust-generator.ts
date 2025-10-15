@@ -15,6 +15,7 @@ import {
   PageBreak,
   Header,
   Footer,
+  PageNumber,
   BorderStyle,
   ShadingType,
   UnderlineType,
@@ -81,51 +82,64 @@ export class OpsioRobustGenerator {
               },
             },
             footers: {
-              default: new Footer({
-                children: [
-                  new Paragraph({
-                    children: [
-                      new TextRun({
-                        text: "OPSIO Sàrl, Avenue de Bel-Air 16, 1225 Chêne-Bourg",
-                        size: 18,
-                      }),
-                    ],
-                    alignment: AlignmentType.CENTER,
-                    spacing: { after: 100 },
-                  }),
-                  new Paragraph({
-                    children: [
-                      new TextRun({
-                        text: "info@opsio.ch  FINMA reg. no F01468622",
-                        size: 18,
-                      }),
-                    ],
-                    alignment: AlignmentType.CENTER,
-                    spacing: { after: 100 },
-                  }),
-                  new Paragraph({
-                    children: [
-                      new TextRun({
-                        text: "Page 1 sur 5",
-                        size: 18,
-                      }),
-                    ],
-                    alignment: AlignmentType.CENTER,
-                    spacing: { after: 100 },
-                  }),
-                  new Paragraph({
-                    children: [
-                      new TextRun({
-                        text: "Informations conformément à l'article 45 de la loi sur la surveillance des assurances",
-                        size: 16,
-                        italics: true,
-                      }),
-                    ],
-                    alignment: AlignmentType.CENTER,
-                  }),
-                ],
-              }),
-            },
+  default: new Footer({
+    children: [
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: "OPSIO Sàrl, Avenue de Bel-Air 16, 1225 Chêne-Bourg",
+            size: 18,
+          }),
+        ],
+        alignment: AlignmentType.CENTER,
+        spacing: { after: 100 },
+      }),
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: "info@opsio.ch  FINMA reg. no F01468622",
+            size: 18,
+          }),
+        ],
+        alignment: AlignmentType.CENTER,
+        spacing: { after: 100 },
+      }),
+      new Paragraph({
+        alignment: AlignmentType.CENTER,
+        spacing: { after: 100 },
+        children: [
+          new TextRun({
+            text: "Page ",
+            size: 18,
+          }),
+          new TextRun({
+            children: [PageNumber.CURRENT],
+            size: 18,
+          }),
+          new TextRun({
+            text: " sur ",
+            size: 18,
+          }),
+          new TextRun({
+            children: [PageNumber.TOTAL_PAGES],
+            size: 18,
+          }),
+        ],
+      }),
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: "Informations conformément à l'article 45 de la loi sur la surveillance des assurances",
+            size: 16,
+            italics: true,
+          }),
+        ],
+        alignment: AlignmentType.CENTER,
+      }),
+    ],
+  }),
+},
+
             children: [
               // Logo OPSIO en en-tête
               ...(logoBuffer ? [
@@ -444,6 +458,10 @@ export class OpsioRobustGenerator {
                 ],
                 spacing: { after: 600 },
               }),
+              new Paragraph({
+                children: [new TextRun({ text: "", break: 1 })],
+                pageBreakBefore: true,
+              }),
 
               // Section 2
               new Paragraph({
@@ -468,56 +486,10 @@ export class OpsioRobustGenerator {
               }),
 
               // Saut de page
-              new Paragraph({
-                children: [new TextRun({ text: "", break: 1 })],
-                pageBreakBefore: true,
-              }),
+              
 
               // Page 2 - En-tête
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: "OPSIO Sàrl, Avenue de Bel-Air 16, 1225 Chêne-Bourg",
-                    size: 18,
-                  }),
-                ],
-                alignment: AlignmentType.CENTER,
-                spacing: { after: 100 },
-              }),
 
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: "info@opsio.ch  FINMA reg. no F01468622",
-                    size: 18,
-                  }),
-                ],
-                alignment: AlignmentType.CENTER,
-                spacing: { after: 100 },
-              }),
-
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: "Page 2 sur 5",
-                    size: 16,
-                  }),
-                ],
-                alignment: AlignmentType.CENTER,
-                spacing: { after: 200 },
-              }),
-
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: "Informations conformément à l'article 45 de la loi sur la surveillance des assurances",
-                    size: 18,
-                    italics: true,
-                  }),
-                ],
-                alignment: AlignmentType.CENTER,
-                spacing: { after: 600 },
-              }),
 
               // Sections 3, 4, 5
               new Paragraph({
@@ -885,50 +857,7 @@ export class OpsioRobustGenerator {
               }),
 
               // Page 3 - En-tête
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: "OPSIO Sàrl, Avenue de Bel-Air 16, 1225 Chêne-Bourg",
-                    size: 18,
-                  }),
-                ],
-                alignment: AlignmentType.CENTER,
-                spacing: { after: 100 },
-              }),
 
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: "info@opsio.ch  FINMA reg. no F01468622",
-                    size: 18,
-                  }),
-                ],
-                alignment: AlignmentType.CENTER,
-                spacing: { after: 100 },
-              }),
-
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: "Page 3 sur 5",
-                    size: 16,
-                  }),
-                ],
-                alignment: AlignmentType.CENTER,
-                spacing: { after: 200 },
-              }),
-
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: "Informations conformément à l'article 45 de la loi sur la surveillance des assurances",
-                    size: 18,
-                    italics: true,
-                  }),
-                ],
-                alignment: AlignmentType.CENTER,
-                spacing: { after: 600 },
-              }),
 
               // Section 7
               new Paragraph({
@@ -1040,51 +969,7 @@ export class OpsioRobustGenerator {
                 pageBreakBefore: true,
               }),
 
-              // Page 4 - En-tête
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: "OPSIO Sàrl, Avenue de Bel-Air 16, 1225 Chêne-Bourg",
-                    size: 18,
-                  }),
-                ],
-                alignment: AlignmentType.CENTER,
-                spacing: { after: 100 },
-              }),
 
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: "info@opsio.ch  FINMA reg. no F01468622",
-                    size: 18,
-                  }),
-                ],
-                alignment: AlignmentType.CENTER,
-                spacing: { after: 100 },
-              }),
-
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: "Page 4 sur 5",
-                    size: 16,
-                  }),
-                ],
-                alignment: AlignmentType.CENTER,
-                spacing: { after: 200 },
-              }),
-
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: "Informations conformément à l'article 45 de la loi sur la surveillance des assurances",
-                    size: 18,
-                    italics: true,
-                  }),
-                ],
-                alignment: AlignmentType.CENTER,
-                spacing: { after: 600 },
-              }),
 
               // Section 9
               new Paragraph({
@@ -1118,45 +1003,7 @@ export class OpsioRobustGenerator {
                 spacing: { after: 600 },
               }),
 
-              // Section 10
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: "10. Décision du/de la client(e) sur la rémunération de l'intermédiaire (cf. ch. 6 supra)",
-                    bold: true,
-                    size: 22,
-                  }),
-                ],
-                spacing: { after: 400 },
-              }),
 
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: data.paymentMethod === 'commission' ? "☑ " : "☐ ",
-                    size: 24,
-                  }),
-                  new TextRun({
-                    text: "Commission de la compagnie d'assurance",
-                    size: 20,
-                  }),
-                ],
-                spacing: { after: 200 },
-              }),
-
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: data.paymentMethod === 'fees' ? "☑ " : "☐ ",
-                    size: 24,
-                  }),
-                  new TextRun({
-                    text: "Honoraires payés par le/la client(e)",
-                    size: 20,
-                  }),
-                ],
-                spacing: { after: 600 },
-              }),
 
               // Texte de confirmation
               new Paragraph({
@@ -1170,25 +1017,9 @@ export class OpsioRobustGenerator {
               }),
 
               // Section signatures
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: "Lieu, date                                                                                    Lieu, date",
-                    size: 20,
-                  }),
-                ],
-                spacing: { after: 200 },
-              }),
+              
 
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: "………………………………………………………                                    ………………………………………………",
-                    size: 20,
-                  }),
-                ],
-                spacing: { after: 400 },
-              }),
+              
 
               // Section signatures séparées
               new Paragraph({
@@ -1251,39 +1082,7 @@ export class OpsioRobustGenerator {
 
               // Texte de confirmation supprimé comme demandé
 
-              // Fin du document
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: "OPSIO Sàrl, Avenue de Bel-Air 16, 1225 Chêne-Bourg",
-                    size: 18,
-                  }),
-                ],
-                alignment: AlignmentType.CENTER,
-                spacing: { after: 100 },
-              }),
-
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: "info@opsio.ch  FINMA reg. no F01468622",
-                    size: 18,
-                  }),
-                ],
-                alignment: AlignmentType.CENTER,
-                spacing: { after: 100 },
-              }),
-
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: "Page 5 sur 5",
-                    size: 16,
-                  }),
-                ],
-                alignment: AlignmentType.CENTER,
-                spacing: { after: 200 },
-              }),
+              // Fin du document - Footer gère les infos OPSIO
             ],
           },
         ],
@@ -1642,38 +1441,222 @@ export class OpsioRobustGenerator {
             // SECTION 10 - choix rémunération
             new Paragraph({ children: [new TextRun({ text: "10. Décision du/de la client(e) sur la rémunération de l’intermédiaire", bold: true, size: 22 })], spacing: { after: 400 } }),
 
-            new Paragraph({
-              children: [
-                new TextRun({ text: paymentMethod === "commission" ? "[X] " : "[ ] ", size: 22 }),
-                new TextRun({ text: "Commission de la compagnie d'assurance", size: 20 }),
+            // Tableau professionnel pour les choix de rémunération
+            new Table({
+              width: {
+                size: 100,
+                type: WidthType.PERCENTAGE,
+              },
+              rows: [
+                new TableRow({
+                  children: [
+                    new TableCell({
+                      children: [
+                        new Paragraph({
+                          children: [
+                            new TextRun({
+                              text: paymentMethod === "commission" ? "☑" : "☐",
+                              size: 24,
+                              bold: true,
+                            }),
+                            new TextRun({
+                              text: " Commission de la compagnie d'assurance",
+                              size: 18,
+                            }),
+                          ],
+                        }),
+                      ],
+                      width: {
+                        size: 50,
+                        type: WidthType.PERCENTAGE,
+                      },
+                    }),
+                    new TableCell({
+                      children: [
+                        new Paragraph({
+                          children: [
+                            new TextRun({
+                              text: paymentMethod === "fees" ? "☑" : "☐",
+                              size: 24,
+                              bold: true,
+                            }),
+                            new TextRun({
+                              text: " Honoraires payés par le/la client(e)",
+                              size: 18,
+                            }),
+                          ],
+                        }),
+                      ],
+                      width: {
+                        size: 50,
+                        type: WidthType.PERCENTAGE,
+                      },
+                    }),
+                  ],
+                }),
               ],
-              spacing: { after: 200 },
             }),
 
-            new Paragraph({
-              children: [
-                new TextRun({ text: paymentMethod === "fees" ? "[X] " : "[ ] ", size: 22 }),
-                new TextRun({ text: "Honoraires payés par le/la client(e)", size: 20 }),
-              ],
-              spacing: { after: 600 },
-            }),
-
-            // Confirmation & signatures
+            // Texte de confirmation professionnel
             new Paragraph({
               children: [
                 new TextRun({
-                  text:
-                    "Par la présente, le/la soussigné(e) confirme que le conseiller/ère à la clientèle de OPSIO Sàrl lui a remis le présent document et lui en a dûment explicité le contenu, avant la conclusion du contrat de courtage, respectivement le/la soussigné(e) confirme en avoir pleinement compris le contenu et y adhérer par sa signature.",
-                  size: 20,
+                  text: "Par la présente, le/la soussigné(e) confirme que le conseiller/ère à la clientèle de OPSIO Sàrl lui a remis le présent document et lui en a dûment explicité le contenu, avant la conclusion du contrat de courtage, respectivement le/la soussigné(e) confirme en avoir pleinement compris le contenu et y adhérer par sa signature.",
+                  size: 18,
                 }),
               ],
               spacing: { after: 600 },
             }),
 
-            new Paragraph({ children: [new TextRun({ text: "Lieu, date                                    Signature Conseiller/ère à la clientèle", size: 20 })], spacing: { after: 200 } }),
-            new Paragraph({ children: [new TextRun({ text: "………………………………………………………                    ………………………………………………", size: 20 })], spacing: { after: 400 } }),
-            new Paragraph({ children: [new TextRun({ text: "Lieu, date                                    Signature Client(e)", size: 20 })], spacing: { after: 200 } }),
-            new Paragraph({ children: [new TextRun({ text: "…………………………………………………………………………………                    ………………………………………………………………………", size: 20 })], spacing: { after: 600 } }),
+            // Tableau professionnel pour les signatures
+            new Table({
+              width: {
+                size: 100,
+                type: WidthType.PERCENTAGE,
+              },
+              rows: [
+                // Ligne des labels
+                new TableRow({
+                  children: [
+                    new TableCell({
+                      children: [
+                        new Paragraph({
+                          children: [
+                            new TextRun({
+                              text: "Signature Conseiller/ère à la clientèle",
+                              size: 18,
+                              bold: true,
+                            }),
+                          ],
+                        }),
+                      ],
+                      width: {
+                        size: 50,
+                        type: WidthType.PERCENTAGE,
+                      },
+                    }),
+                  ],
+                }),
+                // Ligne des espaces de signature
+                new TableRow({
+                  children: [
+                    new TableCell({
+                      children: [
+                        new Paragraph({
+                          children: [
+                            new TextRun({
+                              text: "________________________________",
+                              size: 18,
+                            }),
+                          ],
+                        }),
+                      ],
+                    }),
+                    new TableCell({
+                      children: [
+                        new Paragraph({
+                          children: [
+                            new TextRun({
+                              text: "________________________________",
+                              size: 18,
+                            }),
+                          ],
+                        }),
+                      ],
+                    }),
+                  ],
+                }),
+                // Espacement
+                new TableRow({
+                  children: [
+                    new TableCell({
+                      children: [
+                        new Paragraph({
+                          children: [
+                            new TextRun({
+                              text: " ",
+                              size: 18,
+                            }),
+                          ],
+                        }),
+                      ],
+                    }),
+                    new TableCell({
+                      children: [
+                        new Paragraph({
+                          children: [
+                            new TextRun({
+                              text: " ",
+                              size: 18,
+                            }),
+                          ],
+                        }),
+                      ],
+                    }),
+                  ],
+                }),
+                // Ligne des labels client
+                new TableRow({
+                  children: [
+                    new TableCell({
+                      children: [
+                        new Paragraph({
+                          children: [
+                            new TextRun({
+                              text: "Lieu, date",
+                              size: 18,
+                              bold: true,
+                            }),
+                          ],
+                        }),
+                      ],
+                    }),
+                    new TableCell({
+                      children: [
+                        new Paragraph({
+                          children: [
+                            new TextRun({
+                              text: "Signature Client(e)",
+                              size: 18,
+                              bold: true,
+                            }),
+                          ],
+                        }),
+                      ],
+                    }),
+                  ],
+                }),
+                // Ligne des espaces de signature client
+                new TableRow({
+                  children: [
+                    new TableCell({
+                      children: [
+                        new Paragraph({
+                          children: [
+                            new TextRun({
+                              text: "________________________________",
+                              size: 18,
+                            }),
+                          ],
+                        }),
+                      ],
+                    }),
+                    new TableCell({
+                      children: [
+                        new Paragraph({
+                          children: [
+                            new TextRun({
+                              text: "________________________________",
+                              size: 18,
+                            }),
+                          ],
+                        }),
+                      ],
+                    }),
+                  ],
+                }),
+              ],
+            }),
 
             // Signature électronique image (si fournie)
             ...(data.signatureData
