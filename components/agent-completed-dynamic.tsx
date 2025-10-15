@@ -203,48 +203,61 @@ export function AgentCompletedDynamic() {
         description: `Génération du ZIP avec tous les documents de ${caseItem.client.fullName}...`,
       });
 
-      // Appeler l'API de téléchargement avec génération des documents signés
-      const response = await fetch('/api/client/download-all-documents', {
+      // Créer un ZIP avec tous les documents du client + documents Word avec signatures
+      const response = await fetch(`/api/agent/download-documents`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
+          caseId: caseItem.id,
           clientId: caseItem.client.id,
-          generateSignedDocuments: true, // 🆕 Générer OPSIO + résiliation signés pour tous les dossiers
-          includeAllCases: true // 🆕 Inclure tous les dossiers du client
+          secureToken: caseItem.secureToken,
+          includeWordDocuments: true,
+          includeSignatures: true,
+          generateWordWithSignature: true
         })
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Erreur lors de la création du ZIP');
+      if (response.ok) {
+        const blob = await response.blob()
+        const url = window.URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `DOSSIER-COMPLET-${caseItem.client.fullName.replace(/\s+/g, '-')}-${caseItem.caseNumber}-AVEC-SIGNATURES.zip`
+        document.body.appendChild(a)
+        a.click()
+        window.URL.revokeObjectURL(url)
+        document.body.removeChild(a)
+
+        // Toast de succès avec détails
+        toast({
+          title: "✅ Documents téléchargés",
+          description: `ZIP généré avec succès! Contient: documents Word signés, signatures, métadonnées. Taille: ${(blob.size / 1024).toFixed(2)} KB`,
+        });
+
+        console.log('✅ Téléchargement réussi:', {
+          client: caseItem.client.fullName,
+          taille: `${(blob.size / 1024).toFixed(2)} KB`,
+          contenu: 'Documents Word avec signatures + métadonnées'
+        });
+      } else {
+        const errorText = await response.text();
+        console.error('❌ Erreur téléchargement:', errorText);
+
+        toast({
+          title: "❌ Erreur de téléchargement",
+          description: `Impossible de générer le ZIP: ${response.status} ${response.statusText}`,
+          variant: "destructive"
+        });
       }
-
-      // Télécharger le fichier ZIP
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.style.display = 'none';
-      a.href = url;
-      a.download = `${caseItem.client.fullName.replace(/[^a-zA-Z0-9]/g, '_')}_${caseItem.caseNumber}_complet.zip`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-
-      toast({
-        title: "✅ Documents téléchargés !",
-        description: `Archive complète de ${caseItem.client.fullName} avec tous les documents et signatures`,
-        variant: "default"
-      });
 
     } catch (error) {
       console.error('❌ Erreur téléchargement documents:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
+
       toast({
-        title: "❌ Erreur de téléchargement",
-        description: `Impossible de créer l'archive. ${errorMessage}`,
+        title: "❌ Erreur technique",
+        description: `Erreur lors du téléchargement: ${error instanceof Error ? error.message : 'Erreur inconnue'}`,
         variant: "destructive"
       });
     }

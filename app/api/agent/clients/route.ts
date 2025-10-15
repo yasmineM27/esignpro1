@@ -170,6 +170,35 @@ export async function GET(request: NextRequest) {
       }
     });
 
+    // Corriger les portalUrl pour utiliser le token qui contient effectivement des documents
+    console.log('🔍 Correction des portalUrl pour utiliser les tokens avec documents...');
+
+    for (const [clientId, client] of clientsMap.entries()) {
+      // Vérifier chaque token de dossier pour voir lequel contient des documents
+      let tokenWithDocuments = null;
+
+      for (const caseItem of client.cases) {
+        const { data: documents, error } = await supabaseAdmin
+          .from('client_documents')
+          .select('id')
+          .eq('token', caseItem.secureToken)
+          .limit(1);
+
+        if (!error && documents && documents.length > 0) {
+          console.log(`✅ Documents trouvés pour token ${caseItem.secureToken} (client ${client.fullName})`);
+          tokenWithDocuments = caseItem.secureToken;
+          break; // Utiliser le premier token trouvé avec des documents
+        }
+      }
+
+      // Si un token avec documents a été trouvé, mettre à jour le portalUrl
+      if (tokenWithDocuments && tokenWithDocuments !== client.secureToken) {
+        console.log(`🔄 Correction portalUrl pour ${client.fullName}: ${client.secureToken} → ${tokenWithDocuments}`);
+        client.portalUrl = `/client-portal/${tokenWithDocuments}`;
+        client.secureToken = tokenWithDocuments; // Mettre à jour aussi le secureToken principal
+      }
+    }
+
     // Convertir la Map en array
     const clients = Array.from(clientsMap.values());
 

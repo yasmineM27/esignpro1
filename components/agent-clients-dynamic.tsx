@@ -180,6 +180,7 @@ export function AgentClientsDynamic() {
         body: JSON.stringify({
           caseId: client.caseId,
           clientId: client.id,
+          secureToken: client.secureToken, // Passer le bon token directement
           includeWordDocuments: true,
           includeSignatures: true,
           generateWordWithSignature: true

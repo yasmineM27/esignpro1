@@ -215,33 +215,13 @@ export function AgentNavigation({ activeTab, onTabChange }: AgentNavigationProps
       count: stats.completed > 0 ? stats.completed : null
     },
     {
-      id: "archive",
-      label: "Archive",
-      icon: Archive,
-      description: stats.archive > 0 ? `${stats.archive} dossiers archivés` : "Aucun dossier archivé",
-      count: stats.archive > 0 ? stats.archive : null
-    },
-    {
-      id: "documents",
-      label: "Documents",
-      icon: FileText,
-      description: "Historique des documents",
-      count: null
-    },
-    {
       id: "analytics",
       label: "Statistiques",
       icon: BarChart3,
       description: "Analyses et rapports",
       count: null
     },
-    {
-      id: "demo",
-      label: "Démonstration",
-      icon: Play,
-      description: "Test workflow complet",
-      count: null
-    },
+   
     {
       id: "settings",
       label: "Paramètres",

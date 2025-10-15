@@ -16,6 +16,7 @@ import { DemoWorkflow } from "@/components/demo-workflow"
 import AgentCasesManagement from "@/components/agent-cases-management"
 import DocumentGenerator from "@/components/document-generator"
 import { DynamicAgentNavbar } from "@/components/dynamic-agent-navbar"
+import { AgentAuthWrapper } from "@/components/agent-auth-wrapper"
 
 export default function AgentDashboard() {
   const [activeTab, setActiveTab] = useState("new-case")
@@ -44,34 +45,10 @@ export default function AgentDashboard() {
         return <AgentPendingDynamic />
       case "completed":
         return <AgentCompletedDynamic />
-      case "archive":
-        return <AgentArchiveDynamic />
-      case "documents":
-        return (
-          <div className="space-y-6">
-            <DocumentGenerator
-              caseId="demo-case-001"
-              clientData={{
-                name: "Jean Dupont",
-                address: "Rue de la Paix 123",
-                postalCity: "1200 Genève",
-                birthdate: "1980-05-15",
-                email: "jean.dupont@email.com",
-                phone: "+41 79 123 45 67"
-              }}
-              advisorData={{
-                name: "Marie Martin",
-                email: "marie.martin@opsio.ch",
-                phone: "+41 78 305 12 77"
-              }}
-            />
-            <AgentDocumentsHistory />
-          </div>
-        )
+    
       case "analytics":
         return <AgentAnalyticsDynamic />
-      case "demo":
-        return <DemoWorkflow />
+    
       case "settings":
         return <AgentSettingsDynamic />
       default:
@@ -80,28 +57,30 @@ export default function AgentDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      {/* 🆕 NAVBAR DYNAMIQUE - Informations agent récupérées automatiquement */}
-      <DynamicAgentNavbar
-        showBackButton={true}
-        title="Espace Agent"
-        subtitle="Gestion des dossiers clients"
-      />
+    <AgentAuthWrapper>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+        {/* 🆕 NAVBAR DYNAMIQUE - Informations agent récupérées automatiquement */}
+        <DynamicAgentNavbar
+          showBackButton={true}
+          title="Espace Agent"
+          subtitle="Gestion des dossiers clients"
+        />
 
-      <div className="mx-auto max-w-7xl p-6">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Sidebar Navigation */}
-          <div className="lg:col-span-1">
-            <AgentNavigation activeTab={activeTab} onTabChange={setActiveTab} />
-            <AgentStats />
-          </div>
+        <div className="mx-auto max-w-7xl p-6">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            {/* Sidebar Navigation */}
+            <div className="lg:col-span-1">
+              <AgentNavigation activeTab={activeTab} onTabChange={setActiveTab} />
+              <AgentStats />
+            </div>
 
-          {/* Main Content */}
-          <div className="lg:col-span-3">
-            {renderMainContent()}
+            {/* Main Content */}
+            <div className="lg:col-span-3">
+              {renderMainContent()}
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </AgentAuthWrapper>
   )
 }

@@ -153,7 +153,7 @@ async function generateOpsioDocuments(caseData: any, clientData: any, signatureD
 
 async function handleDownload(caseId: string, clientId: string | null, options: any = {}) {
   try {
-    console.log('📦 Téléchargement documents:', { caseId, clientId });
+    console.log('📦 Téléchargement documents:', { caseId, clientId, secureToken: options.secureToken });
 
     // Récupérer les informations du dossier
     const { data: caseData, error: caseError } = await supabaseAdmin
@@ -201,11 +201,15 @@ async function handleDownload(caseId: string, clientId: string | null, options: 
     // Plus d'utilisation de l'ancienne table signatures
     const signatures: any[] = [];
 
+    // Utiliser le token passé en paramètre ou celui du dossier
+    const tokenToUse = options.secureToken || caseData.secure_token;
+    console.log('🔍 Utilisation du token pour documents:', tokenToUse);
+
     // Récupérer les documents uploadés par le client
     const { data: clientDocuments, error: clientDocError } = await supabaseAdmin
       .from('client_documents')
       .select('*')
-      .eq('token', caseData.secure_token);
+      .eq('token', tokenToUse);
 
     // Récupérer les documents générés
     const { data: generatedDocuments, error: genDocError } = await supabaseAdmin
@@ -540,6 +544,7 @@ export async function POST(request: NextRequest) {
     const {
       caseId,
       clientId,
+      secureToken, // Token à utiliser pour chercher les documents
       includeWordDocuments = false,
       includeSignatures = true,
       generateWordWithSignature = false,
@@ -554,6 +559,7 @@ export async function POST(request: NextRequest) {
     }
 
     const options = {
+      secureToken, // Passer le token aux options
       includeWordDocuments,
       includeSignatures,
       generateWordWithSignature,

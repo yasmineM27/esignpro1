@@ -232,6 +232,41 @@ export function AdminUsers() {
     setIsPasswordDialogOpen(true);
   };
 
+  const handleDeleteUser = async (user: User) => {
+    if (!confirm(`Êtes-vous sûr de vouloir supprimer l'utilisateur "${user.full_name}" ? Cette action est irréversible.`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/admin/users/${user.id}`, {
+        method: 'DELETE'
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        toast({
+          title: "✅ Succès",
+          description: "Utilisateur supprimé avec succès"
+        });
+        fetchUsers(); // Recharger la liste
+      } else {
+        toast({
+          title: "❌ Erreur",
+          description: data.error || "Erreur lors de la suppression",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('Erreur suppression utilisateur:', error);
+      toast({
+        title: "❌ Erreur",
+        description: "Erreur de connexion",
+        variant: "destructive"
+      });
+    }
+  };
+
   // Filtrer les utilisateurs
   const filteredUsers = users.filter(user => {
     const matchesSearch = searchTerm === '' || 
@@ -493,7 +528,12 @@ export function AdminUsers() {
                               <Key className="h-3 w-3 mr-1" />
                               Mot de passe
                             </Button>
-                            <Button size="sm" variant="outline" className="text-red-600 hover:text-red-700">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="text-red-600 hover:text-red-700"
+                              onClick={() => handleDeleteUser(user)}
+                            >
                               <Trash2 className="h-3 w-3 mr-1" />
                               Supprimer
                             </Button>

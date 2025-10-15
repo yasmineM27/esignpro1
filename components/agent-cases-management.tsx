@@ -241,38 +241,68 @@ export default function AgentCasesManagement() {
 
   const downloadCaseDocuments = async (caseItem: CaseItem) => {
     try {
+      console.log('📦 Téléchargement documents pour:', caseItem.client.fullName);
+
+      // Afficher un toast de début
       toast({
         title: "📦 Préparation des documents",
-        description: `Génération du ZIP pour ${caseItem.client.fullName}...`,
+        description: `Génération du ZIP avec documents Word signés pour ${caseItem.client.fullName}...`,
       });
 
-      const response = await fetch('/api/client/download-all-documents', {
+      const response = await fetch(`/api/agent/download-documents`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ clientId: caseItem.client.id })
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          caseId: caseItem.id,
+          clientId: caseItem.client.id,
+          secureToken: caseItem.secureToken,
+          includeWordDocuments: true,
+          includeSignatures: true,
+          generateWordWithSignature: true
+        })
       });
 
-      if (!response.ok) {
-        throw new Error('Erreur lors de la création du ZIP');
+      if (response.ok) {
+        const blob = await response.blob()
+        const url = window.URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `DOSSIER-COMPLET-${caseItem.client.fullName.replace(/\s+/g, '-')}-${caseItem.caseNumber}-AVEC-SIGNATURES.zip`
+        document.body.appendChild(a)
+        a.click()
+        window.URL.revokeObjectURL(url)
+        document.body.removeChild(a)
+
+        // Toast de succès avec détails
+        toast({
+          title: "✅ Documents téléchargés",
+          description: `ZIP généré avec succès! Contient: documents Word signés, signatures, métadonnées. Taille: ${(blob.size / 1024).toFixed(2)} KB`,
+        });
+
+        console.log('✅ Téléchargement réussi:', {
+          client: caseItem.client.fullName,
+          taille: `${(blob.size / 1024).toFixed(2)} KB`,
+          contenu: 'Documents Word avec signatures + métadonnées'
+        });
+      } else {
+        const errorText = await response.text();
+        console.error('❌ Erreur téléchargement:', errorText);
+
+        toast({
+          title: "❌ Erreur de téléchargement",
+          description: `Impossible de générer le ZIP: ${response.status} ${response.statusText}`,
+          variant: "destructive"
+        });
       }
 
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${caseItem.client.fullName.replace(/[^a-zA-Z0-9]/g, '_')}_${caseItem.caseNumber}_complet.zip`;
-      a.click();
-      window.URL.revokeObjectURL(url);
-
-      toast({
-        title: "✅ Documents téléchargés !",
-        description: `Archive complète de ${caseItem.client.fullName}`,
-      });
-
     } catch (error) {
+      console.error('❌ Erreur téléchargement documents:', error);
+
       toast({
-        title: "❌ Erreur de téléchargement",
-        description: "Impossible de créer l'archive",
+        title: "❌ Erreur technique",
+        description: `Erreur lors du téléchargement: ${error instanceof Error ? error.message : 'Erreur inconnue'}`,
         variant: "destructive"
       });
     }
@@ -608,15 +638,7 @@ export default function AgentCasesManagement() {
 
                 {/* Actions */}
                 <div className="flex space-x-2 pt-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => openClientPortal(caseItem)}
-                    className="flex-1"
-                  >
-                    <Eye className="h-4 w-4 mr-2" />
-                    Voir
-                  </Button>
+                  
                   <Button
                     size="sm"
                     variant="outline"

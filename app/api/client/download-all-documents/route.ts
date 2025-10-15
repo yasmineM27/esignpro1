@@ -698,11 +698,21 @@ export async function POST(request: NextRequest) {
       const dossiersFolder = clientFolder.folder('dossiers');
 
       for (const caseItem of cases) {
-        const caseFolder = dossiersFolder?.folder(`${caseItem.case_number}`);
-        
+        // Debug: vérifier les données du dossier
+        console.log('🔍 Traitement dossier:', {
+          id: caseItem.id,
+          case_number: caseItem.case_number,
+          case_number_type: typeof caseItem.case_number,
+          case_number_defined: caseItem.case_number !== undefined,
+          case_number_null: caseItem.case_number === null
+        });
+
+        const caseNumber = caseItem.case_number || `DOSSIER_${caseItem.id}`;
+        const caseFolder = dossiersFolder?.folder(`${caseNumber}`);
+
         // Informations du dossier
         const caseInfo = {
-          numero_dossier: caseItem.case_number,
+          numero_dossier: caseNumber,
           compagnie_assurance: caseItem.insurance_company,
           numero_police: caseItem.policy_number,
           statut: caseItem.status,
@@ -713,7 +723,7 @@ export async function POST(request: NextRequest) {
         caseFolder?.file('informations_dossier.json', JSON.stringify(caseInfo, null, 2));
 
         // 🆕 GÉNÉRER LES DOCUMENTS OBLIGATOIRES POUR CHAQUE DOSSIER (OPSIO + RÉSILIATION) AVEC SIGNATURES
-        console.log(`📄 Génération documents obligatoires pour dossier ${caseItem.case_number}...`);
+        console.log(`📄 Génération documents obligatoires pour dossier ${caseNumber}...`);
 
         // Récupérer la signature client (centralisée)
         const signatureData = (clientSignatures && clientSignatures.length > 0 ? clientSignatures[0].signature_data : null);
@@ -767,21 +777,21 @@ export async function POST(request: NextRequest) {
 
         // 1. Générer document OPSIO avec signature
         try {
-          console.log(`📄 Génération OPSIO pour dossier ${caseItem.case_number}...`);
+          console.log(`📄 Génération OPSIO pour dossier ${caseNumber}...`);
 
           const opsioBuffer = await OpsioRobustGenerator.generateRobustOpsioDocument(templateData);
 
           if (opsioBuffer) {
-            generatedDocsFolder?.file(`Art45 - Optio-${caseItem.case_number}.docx`, opsioBuffer);
-            console.log(`✅ Document OPSIO généré pour ${caseItem.case_number} (${opsioBuffer.length} bytes)`);
+            generatedDocsFolder?.file(`Art45 - Optio-${caseNumber}.docx`, opsioBuffer);
+            console.log(`✅ Document OPSIO généré pour ${caseNumber} (${opsioBuffer.length} bytes)`);
           }
         } catch (error) {
-          console.error(`❌ Erreur génération OPSIO pour ${caseItem.case_number}:`, error);
+          console.error(`❌ Erreur génération OPSIO pour ${caseNumber}:`, error);
         }
 
         // 2. Générer lettre de résiliation avec signature
         try {
-          console.log(`📄 Génération résiliation pour dossier ${caseItem.case_number}...`);
+          console.log(`📄 Génération résiliation pour dossier ${caseNumber}...`);
 
           const clientDataForResignation = {
             nomPrenom: clientName,
@@ -800,18 +810,18 @@ export async function POST(request: NextRequest) {
           const resignationBuffer = await DocxGenerator.generateResignationDocument(clientDataForResignation, signatureData);
 
           if (resignationBuffer) {
-            generatedDocsFolder?.file(`Lettre_Resiliation_${caseItem.case_number}.docx`, resignationBuffer);
-            console.log(`✅ Document résiliation généré pour ${caseItem.case_number} (${resignationBuffer.length} bytes)`);
+            generatedDocsFolder?.file(`Lettre_Resiliation_${caseNumber}.docx`, resignationBuffer);
+            console.log(`✅ Document résiliation généré pour ${caseNumber} (${resignationBuffer.length} bytes)`);
           }
         } catch (error) {
-          console.error(`❌ Erreur génération résiliation pour ${caseItem.case_number}:`, error);
+          console.error(`❌ Erreur génération résiliation pour ${caseNumber}:`, error);
         }
 
         // Documents spécifiques à ce dossier
-        const caseDocuments = clientDocuments?.filter(doc => doc.token === caseItem.case_number) || [];
+        const caseDocuments = clientDocuments?.filter(doc => doc.token === caseNumber) || [];
 
         if (caseDocuments.length > 0) {
-          console.log(`📄 Documents du dossier ${caseItem.case_number}:`, caseDocuments.length);
+          console.log(`📄 Documents du dossier ${caseNumber}:`, caseDocuments.length);
           const caseDocsFolder = caseFolder?.folder('documents');
 
           for (const document of caseDocuments) {
@@ -828,7 +838,7 @@ export async function POST(request: NextRequest) {
                 const safeFileName = document.filename.replace(/[^a-zA-Z0-9.-]/g, '_');
                 docTypeFolder?.file(safeFileName, buffer);
 
-                console.log(`✅ Document dossier ajouté: ${caseItem.case_number}/${typeFolder}/${safeFileName}`);
+                console.log(`✅ Document dossier ajouté: ${caseNumber}/${typeFolder}/${safeFileName}`);
               } else {
                 console.warn(`⚠️ Impossible de télécharger document dossier: ${document.filename} - ${error}`);
 
@@ -837,7 +847,7 @@ export async function POST(request: NextRequest) {
                   filename: document.filename,
                   filepath: document.filepath,
                   error: error,
-                  case_number: caseItem.case_number,
+                  case_number: caseNumber,
                   document_type: document.documenttype
                 };
 

@@ -25,27 +25,42 @@ export async function POST(request: NextRequest) {
     const uploadedFiles = []
     const uploadDir = join(process.cwd(), 'public', 'uploads', 'clients', clientId)
 
+    console.log('📁 Dossier d\'upload:', uploadDir)
+
     // Créer le dossier s'il n'existe pas
     if (!existsSync(uploadDir)) {
-      await mkdir(uploadDir, { recursive: true })
+      console.log('📁 Création du dossier:', uploadDir)
+      try {
+        await mkdir(uploadDir, { recursive: true })
+        console.log('✅ Dossier créé avec succès')
+      } catch (mkdirError) {
+        console.error('❌ Erreur création dossier:', mkdirError)
+        throw new Error(`Erreur lors de la création du dossier: ${mkdirError.message}`)
+      }
+    } else {
+      console.log('✅ Dossier existe déjà')
     }
 
     // Traiter chaque fichier
     for (const file of files) {
       try {
+        console.log(`📄 Traitement fichier: ${file.name} (${file.size} bytes, ${file.type})`)
+
         // Validation du fichier
         const maxSize = 10 * 1024 * 1024 // 10MB
         if (file.size > maxSize) {
-          console.error(`❌ Fichier trop volumineux: ${file.name}`)
+          console.error(`❌ Fichier trop volumineux: ${file.name} (${file.size} bytes > ${maxSize} bytes)`)
           continue
         }
 
         // Types de fichiers autorisés
         const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf']
         if (!allowedTypes.includes(file.type)) {
-          console.error(`❌ Type de fichier non autorisé: ${file.type}`)
+          console.error(`❌ Type de fichier non autorisé: ${file.type} pour ${file.name}`)
           continue
         }
+
+        console.log(`✅ Validation fichier OK: ${file.name}`)
 
         // Générer un nom de fichier unique
         const timestamp = Date.now()
@@ -55,11 +70,17 @@ export async function POST(request: NextRequest) {
         const relativePath = `/uploads/clients/${clientId}/${fileName}`
 
         // Sauvegarder le fichier physiquement
+        console.log('📁 Tentative sauvegarde fichier:', filePath)
         const bytes = await file.arrayBuffer()
         const buffer = Buffer.from(bytes)
-        await writeFile(filePath, buffer)
 
-        console.log('✅ Fichier sauvegardé:', relativePath)
+        try {
+          await writeFile(filePath, buffer)
+          console.log('✅ Fichier sauvegardé physiquement:', relativePath)
+        } catch (writeError) {
+          console.error('❌ Erreur écriture fichier:', writeError)
+          throw new Error(`Erreur lors du stockage du fichier: ${writeError.message}`)
+        }
 
         // Déterminer le type de document
         let docType = 'additional'
@@ -88,6 +109,8 @@ export async function POST(request: NextRequest) {
         // Sauvegarder en base de données si Supabase est disponible
         if (supabaseAdmin) {
           try {
+            console.log('🗄️ Sauvegarde en base de données pour token:', token)
+
             // Récupérer l'ID du dossier
             const { data: caseData, error: caseError } = await supabaseAdmin
               .from('insurance_cases')
@@ -95,7 +118,11 @@ export async function POST(request: NextRequest) {
               .eq('secure_token', token)
               .single()
 
-            if (!caseError && caseData) {
+            if (caseError) {
+              console.error('❌ Erreur récupération dossier:', caseError)
+            } else if (caseData) {
+              console.log('✅ Dossier trouvé:', caseData.id)
+
               // Insérer le document en base
               const { error: insertError } = await supabaseAdmin
                 .from('client_documents')
@@ -107,7 +134,8 @@ export async function POST(request: NextRequest) {
                   file_size: file.size,
                   mime_type: file.type,
                   uploaded_by: caseData.client_id,
-                  is_verified: false
+                  is_verified: false,
+                  token: token // Ajout du token pour cohérence
                 }])
 
               if (insertError) {
@@ -115,10 +143,14 @@ export async function POST(request: NextRequest) {
               } else {
                 console.log('✅ Document sauvegardé en BDD')
               }
+            } else {
+              console.error('❌ Aucun dossier trouvé pour le token:', token)
             }
           } catch (dbError) {
             console.error('❌ Erreur base de données:', dbError)
           }
+        } else {
+          console.log('⚠️ Supabase non disponible, pas de sauvegarde BDD')
         }
 
       } catch (fileError) {

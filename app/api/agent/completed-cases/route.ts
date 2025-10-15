@@ -69,12 +69,12 @@ export async function GET(request: NextRequest) {
           createdAt: caseItem.created_at,
           completedAt: caseItem.completed_at,
           client: {
-            id: caseItem.clients.id,
-            firstName: caseItem.clients.users.first_name,
-            lastName: caseItem.clients.users.last_name,
-            fullName: `${caseItem.clients.users.first_name} ${caseItem.clients.users.last_name}`,
-            email: caseItem.clients.users.email,
-            phone: caseItem.clients.users.phone || ''
+            id: caseItem.clients?.id || 'unknown',
+            firstName: caseItem.clients?.users?.first_name || 'Prénom',
+            lastName: caseItem.clients?.users?.last_name || 'Nom',
+            fullName: `${caseItem.clients?.users?.first_name || 'Prénom'} ${caseItem.clients?.users?.last_name || 'Nom'}`,
+            email: caseItem.clients?.users?.email || 'email@example.com',
+            phone: caseItem.clients?.users?.phone || ''
           },
           signature: signature ? {
             id: signature.id,
@@ -110,6 +110,19 @@ export async function GET(request: NextRequest) {
     };
 
     console.log('📊 Statistiques calculées:', stats);
+
+    // Debug: vérifier les données client
+    completedCases.forEach((caseItem, index) => {
+      if (!caseItem.client || !caseItem.client.firstName || !caseItem.client.lastName) {
+        console.warn(`⚠️ Données client incomplètes pour dossier ${caseItem.caseNumber}:`, {
+          clientExists: !!caseItem.client,
+          clientId: caseItem.client?.id,
+          firstName: caseItem.client?.firstName,
+          lastName: caseItem.client?.lastName,
+          fullName: caseItem.client?.fullName
+        });
+      }
+    });
 
     return NextResponse.json({
       success: true,

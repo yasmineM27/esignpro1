@@ -44,11 +44,19 @@ export async function middleware(request: NextRequest) {
   if (protectedAgentRoutes.some(route => pathname.startsWith(route))) {
     console.log(`🔍 Middleware: Route agent protégée détectée: ${pathname}`);
 
-    const token = request.cookies.get('agent_token')?.value;
-    console.log(`🔍 Middleware: agent_token trouvé: ${token ? 'OUI' : 'NON'}`);
+    // Chercher d'abord agent_token, puis user_token en fallback
+    let token = request.cookies.get('agent_token')?.value;
+    let tokenType = 'agent_token';
 
     if (!token) {
-      console.log(`❌ Middleware: Aucun agent_token trouvé, redirection vers /login`);
+      token = request.cookies.get('user_token')?.value;
+      tokenType = 'user_token';
+    }
+
+    console.log(`🔍 Middleware: ${tokenType} trouvé: ${token ? 'OUI' : 'NON'}`);
+
+    if (!token) {
+      console.log(`❌ Middleware: Aucun token trouvé, redirection vers /login`);
       return NextResponse.redirect(new URL('/login', request.url));
     }
 
@@ -57,13 +65,23 @@ export async function middleware(request: NextRequest) {
       const { payload } = await jwtVerify(token, JWT_SECRET);
       console.log(`🔍 Middleware: Token décodé - userId: ${payload.userId}, role: ${payload.role}`);
 
-      console.log(`✅ Middleware: Accès autorisé pour agent ${payload.userId}`);
+      // Vérifier que l'utilisateur a le rôle agent ou admin
+      if (payload.role !== 'agent' && payload.role !== 'admin') {
+        console.log(`❌ Middleware: Rôle non autorisé: ${payload.role}`);
+        const response = NextResponse.redirect(new URL('/login', request.url));
+        response.cookies.delete('agent_token');
+        response.cookies.delete('user_token');
+        return response;
+      }
+
+      console.log(`✅ Middleware: Accès autorisé pour ${payload.role} ${payload.userId}`);
       return NextResponse.next();
     } catch (error) {
       console.log(`❌ Middleware: Token invalide, redirection vers /login:`, error);
       // Token invalide, rediriger vers la connexion
       const response = NextResponse.redirect(new URL('/login', request.url));
       response.cookies.delete('agent_token');
+      response.cookies.delete('user_token');
       return response;
     }
   }

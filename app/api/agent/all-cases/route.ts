@@ -180,11 +180,11 @@ export async function GET(request: NextRequest) {
         client: {
           id: client.id,
           clientCode: client.client_code,
-          firstName: user.first_name,
-          lastName: user.last_name,
-          fullName: `${user.first_name} ${user.last_name}`,
-          email: user.email,
-          phone: user.phone
+          firstName: user?.first_name || 'Prénom',
+          lastName: user?.last_name || 'Nom',
+          fullName: `${user?.first_name || 'Prénom'} ${user?.last_name || 'Nom'}`,
+          email: user?.email || 'email@example.com',
+          phone: user?.phone || ''
         },
 
         // Informations assurance

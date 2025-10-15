@@ -74,71 +74,7 @@ export default function AdminDashboard() {
 
       <div className="mx-auto max-w-7xl p-6">
         {/* Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Agents Actifs</p>
-                  {loading ? (
-                    <div className="animate-pulse bg-gray-200 h-8 w-16 rounded mt-1"></div>
-                  ) : (
-                    <p className="text-2xl font-bold text-gray-900">{stats.activeAgents}</p>
-                  )}
-                </div>
-                <Users className="h-8 w-8 text-blue-600" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Documents Traités</p>
-                  {loading ? (
-                    <div className="animate-pulse bg-gray-200 h-8 w-20 rounded mt-1"></div>
-                  ) : (
-                    <p className="text-2xl font-bold text-gray-900">{stats.totalDocuments.toLocaleString()}</p>
-                  )}
-                </div>
-                <FileText className="h-8 w-8 text-green-600" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Signatures Aujourd'hui</p>
-                  {loading ? (
-                    <div className="animate-pulse bg-gray-200 h-8 w-12 rounded mt-1"></div>
-                  ) : (
-                    <p className="text-2xl font-bold text-gray-900">{stats.todaySignatures}</p>
-                  )}
-                </div>
-                <Shield className="h-8 w-8 text-red-600" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Temps Moyen</p>
-                  {loading ? (
-                    <div className="animate-pulse bg-gray-200 h-8 w-16 rounded mt-1"></div>
-                  ) : (
-                    <p className="text-2xl font-bold text-gray-900">{stats.averageTime}</p>
-                  )}
-                </div>
-                <Clock className="h-8 w-8 text-purple-600" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        
 
         {/* Navigation Tabs */}
         <div className="flex space-x-1 mb-6 bg-white p-1 rounded-lg shadow-sm">

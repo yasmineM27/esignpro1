@@ -1,8 +1,6 @@
 "use client"
 
-import type React from "react"
-
-import { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -101,6 +99,70 @@ export function ClientForm() {
   const [secureToken, setSecureToken] = useState<string | null>(null)
 
   const [showMultiTemplateGenerator, setShowMultiTemplateGenerator] = useState(false)
+
+  // Hook pour gérer l'envoi automatique d'email pour clients avec signature
+  useEffect(() => {
+    // Condition pour envoyer l'email automatiquement
+    if (showMultiTemplateGenerator && selectedClient && currentCaseId && selectedClient.hasSignature) {
+      const sendEmailDirectly = async () => {
+        try {
+          setIsLoading(true)
+
+          // D'abord récupérer les documents générés pour ce dossier
+          console.log('📄 Récupération documents générés pour dossier:', currentCaseId)
+          const documentsResponse = await fetch(`/api/agent/generated-documents?caseId=${currentCaseId}`)
+          const documentsData = await documentsResponse.json()
+
+          console.log('📄 Réponse API documents:', documentsData)
+
+          if (!documentsData.success || !documentsData.documents || documentsData.documents.length === 0) {
+            console.error('❌ Aucun document généré trouvé:', documentsData)
+            throw new Error('Aucun document généré trouvé pour ce dossier. Veuillez d\'abord générer les documents.')
+          }
+
+          const documentIds = documentsData.documents.map((doc: any) => doc.id)
+          console.log('📄 Documents trouvés pour envoi:', documentIds)
+
+          // Envoyer l'email de notification avec les documents
+          const emailResponse = await fetch('/api/agent/send-documents-email', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              documentIds: documentIds,
+              caseId: currentCaseId,
+              message: `Nouveau dossier de résiliation créé avec signature existante pour ${selectedClient.fullName}`
+            })
+          })
+
+          const emailData = await emailResponse.json()
+
+          if (emailData.success) {
+            toast({
+              title: "✅ Email envoyé !",
+              description: `Notification envoyée à ${selectedClient.fullName} pour le nouveau dossier avec signature existante`,
+            })
+          } else {
+            throw new Error(emailData.error || 'Erreur envoi email')
+          }
+        } catch (error) {
+          console.error('Erreur envoi email direct:', error)
+          toast({
+            title: "Erreur",
+            description: "Erreur lors de l'envoi de l'email",
+            variant: "destructive"
+          })
+        } finally {
+          setIsLoading(false)
+          // Revenir à la sélection client
+          handleBackToClientSelection()
+        }
+      }
+
+      sendEmailDirectly()
+    }
+  }, [showMultiTemplateGenerator, selectedClient, currentCaseId]) // Dépendances pour re-exécuter si nécessaire
 
   // Handle client selection
   const handleClientSelected = (client: any) => {
@@ -584,55 +646,8 @@ export function ClientForm() {
   // Pour les clients existants avec signature, envoyer directement l'email
   // sans afficher l'étape 2/2
   if (showMultiTemplateGenerator && selectedClient && currentCaseId) {
-    // Si le client a une signature, envoyer directement l'email
+    // Si le client a une signature, afficher un message de traitement
     if (selectedClient.hasSignature) {
-      // Envoyer l'email automatiquement et revenir à la sélection
-      React.useEffect(() => {
-        const sendEmailDirectly = async () => {
-          try {
-            setIsLoading(true)
-
-            // Envoyer l'email de notification pour nouveau dossier
-            const emailResponse = await fetch('/api/agent/send-documents-email', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({
-                caseId: currentCaseId,
-                clientEmail: selectedClient.email,
-                clientName: selectedClient.fullName,
-                agentId: 'current-agent' // L'API récupérera l'agent depuis le token
-              })
-            })
-
-            const emailData = await emailResponse.json()
-
-            if (emailData.success) {
-              toast({
-                title: "✅ Email envoyé !",
-                description: `Notification envoyée à ${selectedClient.fullName} pour le nouveau dossier avec signature existante`,
-              })
-            } else {
-              throw new Error(emailData.error || 'Erreur envoi email')
-            }
-          } catch (error) {
-            console.error('Erreur envoi email direct:', error)
-            toast({
-              title: "Erreur",
-              description: "Erreur lors de l'envoi de l'email",
-              variant: "destructive"
-            })
-          } finally {
-            setIsLoading(false)
-            // Revenir à la sélection client
-            handleBackToClientSelection()
-          }
-        }
-
-        sendEmailDirectly()
-      }, []) // Exécuter une seule fois au montage
-
       // Afficher un message de traitement pendant l'envoi
       return (
         <div className="space-y-6">
@@ -1045,25 +1060,6 @@ export function ClientForm() {
           </Button>
         )}
 
-        {/* Bouton principal pour générer et envoyer */}
-        <Button
-          type="submit"
-          size="lg"
-          disabled={isLoading}
-          className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-8 py-3"
-        >
-          {isLoading ? (
-            <>
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-              Traitement en cours...
-            </>
-          ) : (
-            <>
-              <Mail className="h-4 w-4 mr-2" />
-              Générer et Envoyer l'Email
-            </>
-          )}
-        </Button>
       </div>
       </form>
     </div>
