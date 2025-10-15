@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge"
 import Image from "next/image"
 import Link from "next/link"
 import { Shield, FileText, Users, Clock, ArrowRight, Zap, Lock, Globe } from "lucide-react"
+import { DynamicNav } from "@/components/dynamic-nav"
 
 export default function HomePage() {
   return (
@@ -18,20 +19,7 @@ export default function HomePage() {
                 Signature Electronique Securisee
               </Badge>
             </div>
-            <nav className="flex items-center space-x-6">
-              {/* 🔒 ACCÈS SÉCURISÉ - Redirection vers /login */}
-              <Link href="/login" className="text-gray-600 hover:text-gray-900 font-medium">
-                Espace Agent
-              </Link>
-              <Link href="/demo" className="text-gray-600 hover:text-gray-900 font-medium">
-                Démonstration
-              </Link>
-              <Button asChild variant="outline" size="sm">
-                <Link href="/login">
-                  Connexion
-                </Link>
-              </Button>
-            </nav>
+            <DynamicNav />
           </div>
         </div>
       </header>

@@ -18,6 +18,12 @@ const protectedAdminRoutes = [
   '/admin' // 🔒 SÉCURISER L'ACCÈS À L'ADMINISTRATION
 ];
 
+// Routes client qui nécessitent une authentification client
+const protectedClientRoutes = [
+  '/client-dashboard',
+  '/client-portal'
+];
+
 // Routes publiques autorisées (pour déploiement)
 const publicRoutes = [
   '/',
@@ -88,9 +94,55 @@ export async function middleware(request: NextRequest) {
 
   // Vérifier si c'est une route protégée pour les admins
   if (protectedAdminRoutes.some(route => pathname.startsWith(route))) {
-    // Pour l'instant, on laisse l'accès libre à l'admin
-    // En production, vous devriez implémenter une authentification admin
-    return NextResponse.next();
+    console.log(`🔍 Middleware: Route admin protégée détectée: ${pathname}`);
+
+    // Chercher admin_token ou user_token avec rôle admin
+    let token = request.cookies.get('admin_token')?.value;
+    let tokenType = 'admin_token';
+
+    if (!token) {
+      token = request.cookies.get('user_token')?.value;
+      tokenType = 'user_token';
+    }
+
+    if (!token) {
+      token = request.cookies.get('agent_token')?.value;
+      tokenType = 'agent_token';
+    }
+
+    console.log(`🔍 Middleware: ${tokenType} trouvé: ${token ? 'OUI' : 'NON'}`);
+
+    if (!token) {
+      console.log(`❌ Middleware: Aucun token trouvé, redirection vers /login`);
+      return NextResponse.redirect(new URL('/login', request.url));
+    }
+
+    try {
+      // Vérifier le token avec jose (compatible Edge Runtime)
+      const { payload } = await jwtVerify(token, JWT_SECRET);
+      console.log(`🔍 Middleware: Token décodé - userId: ${payload.userId}, role: ${payload.role}`);
+
+      // Vérifier que l'utilisateur a le rôle admin SEULEMENT
+      if (payload.role !== 'admin') {
+        console.log(`❌ Middleware: Accès admin refusé pour le rôle: ${payload.role}`);
+        const response = NextResponse.redirect(new URL('/login', request.url));
+        response.cookies.delete('admin_token');
+        response.cookies.delete('user_token');
+        response.cookies.delete('agent_token');
+        return response;
+      }
+
+      console.log(`✅ Middleware: Accès admin autorisé pour ${payload.role} ${payload.userId}`);
+      return NextResponse.next();
+    } catch (error) {
+      console.log(`❌ Middleware: Token invalide pour admin, redirection vers /login:`, error);
+      // Token invalide, rediriger vers la connexion
+      const response = NextResponse.redirect(new URL('/login', request.url));
+      response.cookies.delete('admin_token');
+      response.cookies.delete('user_token');
+      response.cookies.delete('agent_token');
+      return response;
+    }
   }
 
   return NextResponse.next();

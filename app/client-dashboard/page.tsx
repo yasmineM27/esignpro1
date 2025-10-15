@@ -67,18 +67,31 @@ export default function ClientDashboard() {
 
   const handleLogout = async () => {
     try {
-      await fetch('/api/auth/user-login', {
-        method: 'DELETE'
+      const response = await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include'
       })
-      
-      toast({
-        title: "Déconnexion réussie",
-        description: "À bientôt !",
-      })
-      
-      router.push('/login')
+
+      const data = await response.json()
+
+      if (data.success) {
+        toast({
+          title: "✅ Déconnexion réussie",
+          description: "À bientôt !",
+        })
+
+        // Rediriger vers la page de connexion
+        window.location.href = '/login'
+      } else {
+        throw new Error(data.error || 'Erreur de déconnexion')
+      }
     } catch (error) {
       console.error('Erreur déconnexion:', error)
+      toast({
+        title: "❌ Erreur",
+        description: "Erreur lors de la déconnexion",
+        variant: "destructive"
+      })
     }
   }
 

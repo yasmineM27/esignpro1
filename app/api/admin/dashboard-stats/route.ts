@@ -5,11 +5,18 @@ export async function GET(request: NextRequest) {
   try {
     console.log('🔄 API Dashboard Stats - Début traitement');
 
-    // 1. Compter les agents actifs
+    // 1. Compter les agents actifs (via la table users)
     const { data: agents, error: agentsError } = await supabaseAdmin
       .from('agents')
-      .select('id, user_id')
-      .eq('is_active', true);
+      .select(`
+        id,
+        user_id,
+        users!inner(
+          id,
+          is_active
+        )
+      `)
+      .eq('users.is_active', true);
 
     if (agentsError) {
       console.error('❌ Erreur récupération agents:', agentsError);

@@ -122,10 +122,17 @@ export async function GET(request: NextRequest) {
     });
 
     // Compter le total pour la pagination
-    const { count: totalCount } = await supabaseAdmin
+    let countQuery = supabaseAdmin
       .from('agents')
-      .select('id', { count: 'exact', head: true })
-      .eq('users.is_active', status === 'active' ? true : status === 'inactive' ? false : undefined);
+      .select('id, users!inner(is_active)', { count: 'exact', head: true });
+
+    if (status === 'active') {
+      countQuery = countQuery.eq('users.is_active', true);
+    } else if (status === 'inactive') {
+      countQuery = countQuery.eq('users.is_active', false);
+    }
+
+    const { count: totalCount } = await countQuery;
 
     console.log(`✅ ${formattedAgents.length} agents récupérés`);
 

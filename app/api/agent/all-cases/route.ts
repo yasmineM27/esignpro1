@@ -40,24 +40,7 @@ export async function GET(request: NextRequest) {
         completed_at,
         expires_at,
         client_id,
-        agent_id,
-        clients!inner(
-          id,
-          client_code,
-          users!inner(
-            id,
-            first_name,
-            last_name,
-            email,
-            phone
-          )
-        ),
-        signatures(
-          id,
-          signature_data,
-          signed_at,
-          is_valid
-        )
+        agent_id
       `);
       // .eq('agent_id', agentId); // Commenté pour éviter l'erreur d'agent inexistant
 
@@ -125,25 +108,48 @@ export async function GET(request: NextRequest) {
       }, { status: 500 });
     }
 
-    // Traitement et enrichissement des données
-    const enrichedCases = cases?.map(caseItem => {
-      const client = caseItem.clients;
-      const user = client.users;
-      const signatures = caseItem.signatures || [];
-      // Relations simplifiées - pas de documents pour éviter les erreurs
-      const documents = [];
-      const generatedDocs = [];
-      const emails = [];
+    // Version simplifiée pour éviter les erreurs de fetch
+    console.log(`✅ ${cases?.length || 0} dossiers récupérés`);
 
-      // Calculs de statut et métriques
-      const hasSignature = signatures.length > 0;
-      const lastSignature = signatures.sort((a, b) => 
-        new Date(b.signed_at || b.created_at).getTime() - new Date(a.signed_at || a.created_at).getTime()
-      )[0];
-      
-      const documentsCount = documents.length;
-      const generatedDocsCount = generatedDocs.length;
-      const emailsSent = emails.filter(e => e.status === 'sent').length;
+    // Récupérer les clients et utilisateurs séparément
+    const clientIds = (cases || []).map(c => c.client_id).filter(Boolean);
+
+    let clientsData = [];
+    let usersData = [];
+
+    if (clientIds.length > 0) {
+      const { data: clients } = await supabaseAdmin
+        .from('clients')
+        .select('id, client_code, user_id, has_signature')
+        .in('id', clientIds);
+
+      clientsData = clients || [];
+      console.log(`✅ ${clientsData.length} clients récupérés`);
+
+      const userIds = clientsData.map(c => c.user_id).filter(Boolean);
+      if (userIds.length > 0) {
+        const { data: users } = await supabaseAdmin
+          .from('users')
+          .select('id, first_name, last_name, email, phone')
+          .in('id', userIds);
+
+        usersData = users || [];
+        console.log(`✅ ${usersData.length} utilisateurs récupérés`);
+      }
+    }
+
+    // Traitement et enrichissement des données
+    const enrichedCases = (cases || []).map(caseItem => {
+      const client = clientsData.find(c => c.id === caseItem.client_id);
+      const user = client ? usersData.find(u => u.id === client.user_id) : null;
+
+      // Données simplifiées
+      const hasSignature = client?.has_signature || false;
+
+      // Métriques simplifiées
+      const documentsCount = 0;
+      const generatedDocsCount = 0;
+      const emailsSent = 0;
       
       // Calcul du temps écoulé
       const createdAt = new Date(caseItem.created_at);
@@ -178,8 +184,8 @@ export async function GET(request: NextRequest) {
         
         // Informations client
         client: {
-          id: client.id,
-          clientCode: client.client_code,
+          id: client?.id || 'unknown',
+          clientCode: client?.client_code || '',
           firstName: user?.first_name || 'Prénom',
           lastName: user?.last_name || 'Nom',
           fullName: `${user?.first_name || 'Prénom'} ${user?.last_name || 'Nom'}`,
@@ -194,15 +200,9 @@ export async function GET(request: NextRequest) {
         terminationDate: caseItem.termination_date,
         reasonForTermination: caseItem.reason_for_termination,
 
-        // Signature
+        // Signature simplifiée
         hasSignature,
-        signature: lastSignature ? {
-          id: lastSignature.id,
-          signedAt: lastSignature.signed_at,
-          isValid: lastSignature.is_valid,
-          validationStatus: lastSignature.validation_status,
-          validatedAt: lastSignature.validated_at
-        } : null,
+        signature: null, // Simplifié pour éviter les erreurs
 
         // Métriques
         documentsCount,

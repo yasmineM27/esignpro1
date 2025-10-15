@@ -142,7 +142,7 @@ export async function POST(request: NextRequest) {
 // GET - Vérifier le token et récupérer les infos de l'agent connecté
 export async function GET(request: NextRequest) {
   try {
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const token = cookieStore.get('agent_token')?.value;
 
     if (!token) {

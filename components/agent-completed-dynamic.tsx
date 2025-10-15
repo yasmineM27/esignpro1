@@ -421,7 +421,10 @@ export function AgentCompletedDynamic() {
                           <div className="flex items-center space-x-2">
                             <Signature className="h-4 w-4 text-gray-400" />
                             <span className="text-sm text-gray-600">
-                              Signé le {new Date(caseItem.signature.signedAt).toLocaleDateString('fr-FR')}
+                              {caseItem.signature && caseItem.signature.signedAt
+                                ? `Signé le ${new Date(caseItem.signature.signedAt).toLocaleDateString('fr-FR')}`
+                                : 'Document signé'
+                              }
                             </span>
                           </div>
                         </div>
@@ -440,7 +443,7 @@ export function AgentCompletedDynamic() {
                             <CheckCircle className="h-4 w-4" />
                             <span className="text-sm font-medium">Dossier terminé</span>
                           </div>
-                          {caseItem.signature.isValid && (
+                          {caseItem.signature && caseItem.signature.isValid && (
                             <div className="flex items-center space-x-2 text-blue-600">
                               <Award className="h-4 w-4" />
                               <span className="text-sm font-medium">Signature validée</span>
@@ -504,16 +507,16 @@ export function AgentCompletedDynamic() {
             </div>
             <div className="space-y-4">
               <div className="border rounded-lg p-4 bg-gray-50">
-                <img 
-                  src={selectedSignature.signatureData} 
-                  alt="Signature" 
+                <img
+                  src={selectedSignature?.signatureData || '/placeholder-signature.png'}
+                  alt="Signature"
                   className="w-full h-32 object-contain border rounded"
                 />
               </div>
               <div className="text-sm text-gray-600">
-                <p><strong>Signé le:</strong> {new Date(selectedSignature.signedAt).toLocaleString('fr-FR')}</p>
-                <p><strong>Statut:</strong> {selectedSignature.isValid ? 'Valide' : 'En attente de validation'}</p>
-                {selectedSignature.validatedAt && (
+                <p><strong>Signé le:</strong> {selectedSignature?.signedAt ? new Date(selectedSignature.signedAt).toLocaleString('fr-FR') : 'Date non disponible'}</p>
+                <p><strong>Statut:</strong> {selectedSignature?.isValid ? 'Valide' : 'En attente de validation'}</p>
+                {selectedSignature?.validatedAt && (
                   <p><strong>Validé le:</strong> {new Date(selectedSignature.validatedAt).toLocaleString('fr-FR')}</p>
                 )}
               </div>

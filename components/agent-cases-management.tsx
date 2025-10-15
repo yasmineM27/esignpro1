@@ -627,11 +627,21 @@ export default function AgentCasesManagement() {
                 </div>
 
                 {/* Signature */}
-                {caseItem.hasSignature && (
+                {caseItem.hasSignature && caseItem.signature && caseItem.signature.signedAt && (
                   <div className="flex items-center space-x-2 p-2 bg-green-50 rounded-lg">
                     <Signature className="h-4 w-4 text-green-600" />
                     <span className="text-sm text-green-800">
-                      Signé le {new Date(caseItem.signature!.signedAt).toLocaleDateString('fr-FR')}
+                      Signé le {new Date(caseItem.signature.signedAt).toLocaleDateString('fr-FR')}
+                    </span>
+                  </div>
+                )}
+
+                {/* Signature sans date */}
+                {caseItem.hasSignature && (!caseItem.signature || !caseItem.signature.signedAt) && (
+                  <div className="flex items-center space-x-2 p-2 bg-green-50 rounded-lg">
+                    <Signature className="h-4 w-4 text-green-600" />
+                    <span className="text-sm text-green-800">
+                      Document signé
                     </span>
                   </div>
                 )}

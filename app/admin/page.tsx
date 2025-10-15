@@ -6,10 +6,11 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import Image from "next/image"
 import Link from "next/link"
-import { ArrowLeft, Users, Settings, Clock, FileText, BarChart3, Shield } from "lucide-react"
+import { ArrowLeft, Users, Settings, Clock, FileText, BarChart3, Shield, LogOut } from "lucide-react"
 import { AdminAgents } from "@/components/admin-agents"
 import { AdminUsers } from "@/components/admin-users"
 import { AdminSettings } from "@/components/admin-settings"
+import { SessionManager } from "@/components/session-manager"
 
 export default function AdminDashboard() {
   const [activeSection, setActiveSection] = useState("dashboard")
@@ -20,6 +21,21 @@ export default function AdminDashboard() {
     averageTime: '0min'
   })
   const [loading, setLoading] = useState(true)
+
+  // Fonction de déconnexion
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include'
+      })
+
+      // Rediriger vers la page de connexion
+      window.location.href = '/login'
+    } catch (error) {
+      console.error('Erreur déconnexion:', error)
+    }
+  }
 
   // Récupérer les statistiques au chargement
   useEffect(() => {
@@ -41,7 +57,8 @@ export default function AdminDashboard() {
     fetchStats()
   }, [])
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-slate-100">
+    <SessionManager requiredRole="admin" redirectTo="/login">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-slate-100">
       {/* Admin Header */}
       <div className="bg-white shadow-sm border-b">
         <div className="mx-auto max-w-7xl px-6 py-4">
@@ -67,6 +84,15 @@ export default function AdminDashboard() {
                 <p className="text-sm font-medium text-gray-900">Admin: Système</p>
                 <p className="text-xs text-gray-600">Accès complet</p>
               </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleLogout}
+                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+              >
+                <LogOut className="h-4 w-4 mr-2" />
+                Déconnexion
+              </Button>
             </div>
           </div>
         </div>
@@ -74,7 +100,55 @@ export default function AdminDashboard() {
 
       <div className="mx-auto max-w-7xl p-6">
         {/* Stats Overview */}
-        
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Agents Actifs</p>
+                  <p className="text-2xl font-bold text-gray-900">{stats.activeAgents}</p>
+                </div>
+                <Users className="h-8 w-8 text-blue-500" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Documents</p>
+                  <p className="text-2xl font-bold text-gray-900">{stats.totalDocuments}</p>
+                </div>
+                <FileText className="h-8 w-8 text-green-500" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Signatures Aujourd'hui</p>
+                  <p className="text-2xl font-bold text-gray-900">{stats.todaySignatures}</p>
+                </div>
+                <Shield className="h-8 w-8 text-purple-500" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Temps Moyen</p>
+                  <p className="text-2xl font-bold text-gray-900">{stats.averageTime}</p>
+                </div>
+                <Clock className="h-8 w-8 text-orange-500" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Navigation Tabs */}
         <div className="flex space-x-1 mb-6 bg-white p-1 rounded-lg shadow-sm">
@@ -167,5 +241,6 @@ export default function AdminDashboard() {
         {activeSection === "settings" && <AdminSettings />}
       </div>
     </div>
+    </SessionManager>
   )
 }
