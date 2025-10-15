@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
 
     console.log('🔍 Recherche clients:', { search, limit, includeSignatureStatus, onlyWithSignature });
 
-    // First, try with new columns (after database enhancements)
+    // Récupérer les clients avec leurs informations complètes et leurs dossiers d'assurance
     let query = supabaseAdmin
       .from('clients')
       .select(`
@@ -28,8 +28,6 @@ export async function GET(request: NextRequest) {
         city,
         postal_code,
         country,
-        has_signature,
-        signature_count,
         created_at,
         updated_at,
         users!inner(
@@ -38,16 +36,17 @@ export async function GET(request: NextRequest) {
           last_name,
           email,
           phone
+        ),
+        insurance_cases!left(
+          id,
+          policy_number,
+          insurance_company,
+          status,
+          created_at
         )
       `);
 
-    // If new columns don't exist, fall back to basic query
-    let fallbackMode = false;
-
-    // Filter by signature status if requested (only if new columns exist)
-    if (onlyWithSignature && !fallbackMode) {
-      query = query.eq('has_signature', true);
-    }
+    console.log('🔍 Requête clients avec recherche:', search);
 
     // Apply search filter - use a different approach to avoid Supabase syntax issues
     if (search.trim()) {
@@ -60,46 +59,6 @@ export async function GET(request: NextRequest) {
       .limit(limit);
 
     let { data: clients, error } = await query;
-
-    // If error due to missing columns, try fallback query
-    if (error && (error.message?.includes('has_signature') || error.code === 'PGRST100')) {
-      console.log('🔄 Trying fallback query without new columns...');
-      fallbackMode = true;
-
-      let fallbackQuery = supabaseAdmin
-        .from('clients')
-        .select(`
-          id,
-          client_code,
-          date_of_birth,
-          address,
-          city,
-          postal_code,
-          country,
-          created_at,
-          updated_at,
-          users!inner(
-            id,
-            first_name,
-            last_name,
-            email,
-            phone
-          )
-        `);
-
-      // Apply search filter for fallback - use simple approach
-      if (search.trim()) {
-        fallbackQuery = fallbackQuery.ilike('users.first_name', `%${search.trim()}%`);
-      }
-
-      fallbackQuery = fallbackQuery
-        .order('updated_at', { ascending: false })
-        .limit(limit);
-
-      const fallbackResult = await fallbackQuery;
-      clients = fallbackResult.data;
-      error = fallbackResult.error;
-    }
 
     if (error) {
       console.error('❌ Erreur recherche clients:', error);
@@ -141,6 +100,11 @@ export async function GET(request: NextRequest) {
       const signatureInfo = signatureMap.get(client.id) || { count: 0, hasDefault: false };
       const hasSignature = signatureInfo.count > 0;
 
+      // Récupérer le numéro de police le plus récent
+      const mostRecentCase = client.insurance_cases && client.insurance_cases.length > 0
+        ? client.insurance_cases.sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0]
+        : null;
+
       return {
         id: client.id,
         clientCode: client.client_code,
@@ -148,12 +112,14 @@ export async function GET(request: NextRequest) {
         lastName: client.users.last_name,
         fullName: `${client.users.first_name} ${client.users.last_name}`,
         email: client.users.email,
-        phone: client.users.phone,
-        dateOfBirth: client.date_of_birth,
+        phone: client.users.phone || '', // Numéro de téléphone depuis users.phone
+        dateOfBirth: client.date_of_birth, // Date de naissance depuis clients.date_of_birth
         address: client.address,
         city: client.city,
         postalCode: client.postal_code,
         country: client.country,
+        policyNumber: mostRecentCase?.policy_number || '', // Numéro de police depuis insurance_cases.policy_number
+        insuranceCompany: mostRecentCase?.insurance_company || '',
         // Use real signature data from client_signatures table
         hasSignature: hasSignature,
         signatureCount: signatureInfo.count,
@@ -179,25 +145,16 @@ export async function GET(request: NextRequest) {
         withSignature: formattedClients.filter(c => c.hasSignature).length,
         withoutSignature: formattedClients.filter(c => !c.hasSignature).length
       };
-    } else if (includeSignatureStatus && fallbackMode) {
-      // Fallback stats when new columns don't exist
-      stats = {
-        total: formattedClients.length,
-        withSignature: 0,
-        withoutSignature: formattedClients.length
-      };
     }
 
-    console.log(`✅ ${formattedClients.length} client(s) trouvé(s)${fallbackMode ? ' (mode de compatibilité)' : ''}`);
+    console.log(`✅ ${filteredClients.length} client(s) trouvé(s)`);
 
     return NextResponse.json({
       success: true,
       clients: filteredClients,
       count: filteredClients.length,
       stats: stats,
-      searchTerm: search,
-      fallbackMode: fallbackMode,
-      warning: fallbackMode ? 'Base de données non mise à jour. Appliquez les améliorations de la base de données pour activer toutes les fonctionnalités.' : null
+      searchTerm: search
     });
 
   } catch (error) {

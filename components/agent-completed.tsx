@@ -86,11 +86,28 @@ export function AgentCompleted() {
 
   const loadSignatures = async () => {
     try {
-      const response = await fetch('/api/agent/signatures?status=signed')
+      const response = await fetch('/api/agent/completed-cases?limit=50')
       const data = await response.json()
 
       if (data.success) {
-        setSignatures(data.signatures)
+        // Transformer les données pour correspondre au format attendu
+        const transformedSignatures = data.cases.map((caseItem: any) => ({
+          id: caseItem.signature?.id || caseItem.id,
+          signatureData: caseItem.signature?.signatureData || '',
+          signedAt: caseItem.signature?.signedAt || caseItem.completedAt,
+          isValid: caseItem.signature?.isValid || true,
+          case: {
+            id: caseItem.id,
+            caseNumber: caseItem.caseNumber,
+            secureToken: caseItem.secureToken,
+            client: {
+              firstName: caseItem.client.firstName,
+              lastName: caseItem.client.lastName,
+              email: caseItem.client.email
+            }
+          }
+        }))
+        setSignatures(transformedSignatures)
       } else {
         toast({
           title: "Erreur",

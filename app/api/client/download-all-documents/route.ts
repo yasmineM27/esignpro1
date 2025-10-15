@@ -96,7 +96,8 @@ export async function POST(request: NextRequest) {
         users!inner(
           first_name,
           last_name,
-          email
+          email,
+          phone
         )
       `)
       .eq('id', clientId)
@@ -109,7 +110,8 @@ export async function POST(request: NextRequest) {
       }, { status: 404 });
     }
 
-    const clientName = `${client.users.first_name} ${client.users.last_name}`;
+    const clientUser = Array.isArray(client.users) ? client.users[0] : client.users;
+    const clientName = `${clientUser.first_name} ${clientUser.last_name}`;
     console.log('👤 Client trouvé:', clientName);
 
     // 2. Récupérer tous les dossiers du client
@@ -148,20 +150,9 @@ export async function POST(request: NextRequest) {
       console.warn('⚠️ Erreur récupération signatures client:', sigError);
     }
 
-    // 4. Récupérer les signatures de dossiers
-    const caseIds = cases?.map(c => c.id) || [];
-    let caseSignatures = [];
-    
-    if (caseIds.length > 0) {
-      const { data: caseSigs, error: caseSigError } = await supabaseAdmin
-        .from('signatures')
-        .select('*')
-        .in('case_id', caseIds);
-
-      if (!caseSigError && caseSigs) {
-        caseSignatures = caseSigs;
-      }
-    }
+    // 4. Récupérer les signatures de dossiers (SUPPRIMÉ - utilise uniquement client_signatures)
+    // Les signatures sont maintenant centralisées dans client_signatures
+    let caseSignatures: any[] = [];
 
     console.log('✍️ Signatures trouvées:', {
       clientSignatures: clientSignatures?.length || 0,
@@ -194,7 +185,7 @@ export async function POST(request: NextRequest) {
     // 5.1. Ajouter un fichier d'informations client
     const clientInfo = {
       nom: clientName,
-      email: client.users.email,
+      email: clientUser.email,
       code_client: client.client_code,
       nombre_dossiers: cases?.length || 0,
       nombre_signatures: (clientSignatures?.length || 0) + caseSignatures.length,
@@ -213,7 +204,7 @@ export async function POST(request: NextRequest) {
         total: clientDocuments.length,
         downloaded: 0,
         errors: 0,
-        by_type: {}
+        by_type: {} as Record<string, number>
       };
 
       for (const document of clientDocuments) {
@@ -276,6 +267,31 @@ export async function POST(request: NextRequest) {
       
       for (const signature of clientSignatures) {
         try {
+          // Sauvegarder la signature dans Supabase Storage
+          if (signature.signature_data && signature.signature_data.startsWith('data:image/')) {
+            try {
+              const base64Data = signature.signature_data.split(',')[1];
+              const extension = signature.signature_data.includes('png') ? 'png' : 'jpg';
+              const buffer = Buffer.from(base64Data, 'base64');
+              const storagePath = `signatures/${client.id}/${signature.id}.${extension}`;
+
+              const { error: uploadError } = await supabaseAdmin.storage
+                .from('client-documents')
+                .upload(storagePath, buffer, {
+                  contentType: `image/${extension}`,
+                  upsert: true
+                });
+
+              if (uploadError) {
+                console.warn('⚠️ Erreur sauvegarde signature dans Storage:', uploadError);
+              } else {
+                console.log('✅ Signature sauvegardée dans Storage:', storagePath);
+              }
+            } catch (storageError) {
+              console.warn('⚠️ Erreur sauvegarde signature:', storageError);
+            }
+          }
+
           // Créer un formulaire Word complet avec signature
           const formParagraphs = [
             // En-tête du formulaire
@@ -322,7 +338,7 @@ export async function POST(request: NextRequest) {
             new Paragraph({
               children: [
                 new TextRun({ text: "Email: ", bold: true, size: 24 }),
-                new TextRun({ text: client.users.email, size: 24 })
+                new TextRun({ text: clientUser.email, size: 24 })
               ]
             }),
             new Paragraph({
@@ -476,7 +492,7 @@ export async function POST(request: NextRequest) {
                 new Paragraph({
                   children: [
                     new TextRun({ text: "Email: ", bold: true, size: 24 }),
-                    new TextRun({ text: client.users.email, size: 24 })
+                    new TextRun({ text: clientUser.email, size: 24 })
                   ]
                 }),
                 new Paragraph({
@@ -699,22 +715,45 @@ export async function POST(request: NextRequest) {
         // 🆕 GÉNÉRER LES DOCUMENTS OBLIGATOIRES POUR CHAQUE DOSSIER (OPSIO + RÉSILIATION) AVEC SIGNATURES
         console.log(`📄 Génération documents obligatoires pour dossier ${caseItem.case_number}...`);
 
-        // Récupérer la signature pour ce dossier
-        const caseSignature = caseSignatures.find(s => s.case_id === caseItem.id);
-        const signatureData = caseSignature?.signature_data ||
-                             (clientSignatures && clientSignatures.length > 0 ? clientSignatures[0].signature_data : null);
+        // Récupérer la signature client (centralisée)
+        const signatureData = (clientSignatures && clientSignatures.length > 0 ? clientSignatures[0].signature_data : null);
+
+        // Récupérer les données complètes du client depuis la table clients
+        const { data: clientDetails } = await supabaseAdmin
+          .from('clients')
+          .select('address, city, postal_code, country, date_of_birth')
+          .eq('id', client.id)
+          .single();
+
+        // Construire l'adresse complète
+        let fullAddress = '';
+        if (clientDetails?.address) {
+          fullAddress = clientDetails.address;
+        }
+
+        let postalCity = '';
+        if (clientDetails?.postal_code && clientDetails?.city) {
+          postalCity = `${clientDetails.postal_code} ${clientDetails.city}`;
+        } else if (clientDetails?.city) {
+          postalCity = clientDetails.city;
+        }
+
+        // Données du conseiller (valeurs par défaut pour l'instant)
+        const advisorName = 'Conseiller OPSIO';
+        const advisorEmail = 'info@opsio.ch';
+        const advisorPhone = '+41 78 305 12 77';
 
         // Données communes pour les templates
         const templateData = {
           clientName: clientName,
-          clientAddress: client.users.email || 'Adresse non renseignée', // Fallback
-          clientPostalCity: 'Ville non renseignée', // À améliorer avec vraies données
-          clientBirthdate: '',
-          clientEmail: client.users.email,
-          clientPhone: '',
-          advisorName: 'Conseiller OPSIO',
-          advisorEmail: 'info@opsio.ch',
-          advisorPhone: '+41 78 305 12 77',
+          clientAddress: fullAddress || '', // Adresse réelle ou vide
+          clientPostalCity: postalCity || '', // NPA/Localité réels ou vides
+          clientBirthdate: clientDetails?.date_of_birth ? new Date(clientDetails.date_of_birth).toLocaleDateString('fr-CH') : '',
+          clientEmail: clientUser.email || '',
+          clientPhone: (clientUser as any).phone || '',
+          advisorName: advisorName,
+          advisorEmail: advisorEmail,
+          advisorPhone: advisorPhone,
           insuranceCompany: caseItem.insurance_company || 'Compagnie d\'assurance',
           policyNumber: caseItem.policy_number || '',
           lamalTerminationDate: caseItem.completed_at ? new Date(caseItem.completed_at).toLocaleDateString('fr-CH') : '',
@@ -733,7 +772,7 @@ export async function POST(request: NextRequest) {
           const opsioBuffer = await OpsioRobustGenerator.generateRobustOpsioDocument(templateData);
 
           if (opsioBuffer) {
-            generatedDocsFolder?.file(`Feuille_Information_OPSIO_${caseItem.case_number}.docx`, opsioBuffer);
+            generatedDocsFolder?.file(`Art45 - Optio-${caseItem.case_number}.docx`, opsioBuffer);
             console.log(`✅ Document OPSIO généré pour ${caseItem.case_number} (${opsioBuffer.length} bytes)`);
           }
         } catch (error) {
@@ -812,329 +851,9 @@ export async function POST(request: NextRequest) {
           }
         }
 
-        // Signatures spécifiques à ce dossier
-        const caseSigs = caseSignatures.filter(s => s.case_id === caseItem.id);
-        
-        if (caseSigs.length > 0) {
-          for (const caseSig of caseSigs) {
-            try {
-              if (caseSig.signature_data && caseSig.signature_data.startsWith('data:image/')) {
-                const base64Data = caseSig.signature_data.split(',')[1];
-                const imageBuffer = Buffer.from(base64Data, 'base64');
-                
-                // Formulaire complet pour le dossier avec signature
-                const caseFormParagraphs = [
-                  // En-tête du formulaire de dossier
-                  new Paragraph({
-                    children: [
-                      new TextRun({
-                        text: "FORMULAIRE DE DOSSIER SIGNÉ",
-                        bold: true,
-                        size: 32,
-                        color: "2563EB"
-                      })
-                    ],
-                    alignment: "center"
-                  }),
-                  new Paragraph({
-                    children: [
-                      new TextRun({
-                        text: "eSignPro - Signature Électronique Sécurisée",
-                        size: 24,
-                        color: "6B7280"
-                      })
-                    ],
-                    alignment: "center"
-                  }),
-                  new Paragraph({ children: [] }), // Espace
-
-                  // Informations du dossier
-                  new Paragraph({
-                    children: [
-                      new TextRun({
-                        text: "INFORMATIONS DU DOSSIER",
-                        bold: true,
-                        size: 28,
-                        color: "1F2937"
-                      })
-                    ]
-                  }),
-                  new Paragraph({
-                    children: [
-                      new TextRun({ text: "Numéro de dossier: ", bold: true, size: 24 }),
-                      new TextRun({ text: caseItem.case_number, size: 24, color: "2563EB" })
-                    ]
-                  }),
-                  new Paragraph({
-                    children: [
-                      new TextRun({ text: "Compagnie d'assurance: ", bold: true, size: 24 }),
-                      new TextRun({ text: caseItem.insurance_company, size: 24 })
-                    ]
-                  }),
-                  new Paragraph({
-                    children: [
-                      new TextRun({ text: "Type de police: ", bold: true, size: 24 }),
-                      new TextRun({ text: caseItem.policy_type, size: 24 })
-                    ]
-                  }),
-                  new Paragraph({
-                    children: [
-                      new TextRun({ text: "Numéro de police: ", bold: true, size: 24 }),
-                      new TextRun({ text: caseItem.policy_number, size: 24 })
-                    ]
-                  }),
-                  new Paragraph({
-                    children: [
-                      new TextRun({ text: "Statut: ", bold: true, size: 24 }),
-                      new TextRun({
-                        text: caseItem.status.toUpperCase(),
-                        size: 24,
-                        color: caseItem.status === 'completed' ? "059669" : "DC2626"
-                      })
-                    ]
-                  }),
-                  new Paragraph({ children: [] }), // Espace
-
-                  // Informations client
-                  new Paragraph({
-                    children: [
-                      new TextRun({
-                        text: "INFORMATIONS CLIENT",
-                        bold: true,
-                        size: 28,
-                        color: "1F2937"
-                      })
-                    ]
-                  }),
-                  new Paragraph({
-                    children: [
-                      new TextRun({ text: "Nom complet: ", bold: true, size: 24 }),
-                      new TextRun({ text: clientName, size: 24 })
-                    ]
-                  }),
-                  new Paragraph({
-                    children: [
-                      new TextRun({ text: "Email: ", bold: true, size: 24 }),
-                      new TextRun({ text: client.users.email, size: 24 })
-                    ]
-                  }),
-                  new Paragraph({
-                    children: [
-                      new TextRun({ text: "Code client: ", bold: true, size: 24 }),
-                      new TextRun({ text: client.client_code, size: 24 })
-                    ]
-                  }),
-                  new Paragraph({ children: [] }), // Espace
-
-                  // Informations de signature
-                  new Paragraph({
-                    children: [
-                      new TextRun({
-                        text: "SIGNATURE ÉLECTRONIQUE",
-                        bold: true,
-                        size: 28,
-                        color: "1F2937"
-                      })
-                    ]
-                  }),
-                  new Paragraph({
-                    children: [
-                      new TextRun({ text: "Date de signature: ", bold: true, size: 24 }),
-                      new TextRun({
-                        text: new Date(caseSig.signed_at || caseSig.created_at).toLocaleDateString('fr-FR', {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        }),
-                        size: 24
-                      })
-                    ]
-                  }),
-                  new Paragraph({
-                    children: [
-                      new TextRun({ text: "Statut de validation: ", bold: true, size: 24 }),
-                      new TextRun({
-                        text: caseSig.is_valid ? 'Signature valide' : 'En attente de validation',
-                        size: 24,
-                        color: caseSig.is_valid ? "059669" : "DC2626"
-                      })
-                    ]
-                  }),
-                  new Paragraph({
-                    children: [
-                      new TextRun({
-                        text: "La signature ci-dessous a été capturée électroniquement:",
-                        size: 22,
-                        italics: true,
-                        color: "6B7280"
-                      })
-                    ]
-                  }),
-                  new Paragraph({ children: [] }), // Espace
-
-                  // Image de signature
-                  new Paragraph({
-                    children: [
-                      new ImageRun({
-                        data: imageBuffer,
-                        transformation: {
-                          width: 400,
-                          height: 200,
-                        },
-                      })
-                    ],
-                    alignment: "center"
-                  }),
-                  new Paragraph({ children: [] }), // Espace
-
-                  // Validation et certification
-                  new Paragraph({
-                    children: [
-                      new TextRun({
-                        text: "VALIDATION ET CERTIFICATION",
-                        bold: true,
-                        size: 28,
-                        color: "1F2937"
-                      })
-                    ]
-                  }),
-                  new Paragraph({
-                    children: [
-                      new TextRun({ text: "Horodatage: ", bold: true, size: 22 }),
-                      new TextRun({
-                        text: new Date(caseSig.signed_at || caseSig.created_at).toLocaleString('fr-FR', {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit',
-                          second: '2-digit',
-                          timeZoneName: 'short'
-                        }),
-                        size: 22
-                      })
-                    ]
-                  }),
-                  new Paragraph({
-                    children: [
-                      new TextRun({ text: "Plateforme: ", bold: true, size: 22 }),
-                      new TextRun({ text: "eSignPro - Signature Électronique Sécurisée", size: 22 })
-                    ]
-                  }),
-                  new Paragraph({
-                    children: [
-                      new TextRun({ text: "Conformité: ", bold: true, size: 22 }),
-                      new TextRun({ text: "Conforme à la législation suisse (SCSE)", size: 22, color: "059669" })
-                    ]
-                  }),
-                  new Paragraph({
-                    children: [
-                      new TextRun({ text: "Intégrité: ", bold: true, size: 22 }),
-                      new TextRun({ text: "Document protégé contre la falsification", size: 22, color: "059669" })
-                    ]
-                  }),
-                  new Paragraph({ children: [] }), // Espace
-
-                  // Pied de page
-                  new Paragraph({
-                    children: [
-                      new TextRun({
-                        text: "Ce document constitue une preuve légale de signature électronique pour ce dossier.",
-                        size: 20,
-                        italics: true,
-                        color: "6B7280"
-                      })
-                    ],
-                    alignment: "center"
-                  }),
-                  new Paragraph({
-                    children: [
-                      new TextRun({
-                        text: `Document généré le ${new Date().toLocaleString('fr-FR')}`,
-                        size: 18,
-                        color: "9CA3AF"
-                      })
-                    ],
-                    alignment: "center"
-                  })
-                ];
-
-                const doc = new Document({
-                  sections: [{
-                    properties: {
-                      page: {
-                        margin: {
-                          top: 1440,    // 1 inch
-                          right: 1440,
-                          bottom: 1440,
-                          left: 1440,
-                        },
-                      },
-                    },
-                    children: caseFormParagraphs
-                  }]
-                });
-
-                const buffer = await Packer.toBuffer(doc);
-                caseFolder?.file(`signature_${caseItem.case_number}.docx`, buffer);
-
-                // Aussi sauvegarder l'image séparément
-                caseFolder?.file(`signature_${caseItem.case_number}.png`, imageBuffer);
-
-              } else {
-                // Formulaire sans image de signature
-                const basicFormParagraphs = [
-                  new Paragraph({
-                    children: [
-                      new TextRun({
-                        text: "FORMULAIRE DE DOSSIER",
-                        bold: true,
-                        size: 32,
-                        color: "2563EB"
-                      })
-                    ],
-                    alignment: "center"
-                  }),
-                  new Paragraph({
-                    children: [
-                      new TextRun({
-                        text: `Dossier ${caseItem.case_number}`,
-                        size: 24,
-                        color: "6B7280"
-                      })
-                    ],
-                    alignment: "center"
-                  }),
-                ];
-
-                const doc = new Document({
-                  sections: [{
-                    properties: {
-                      page: {
-                        margin: {
-                          top: 1440,    // 1 inch
-                          right: 1440,
-                          bottom: 1440,
-                          left: 1440,
-                        },
-                      },
-                    },
-                    children: caseFormParagraphs
-                  }]
-                });
-
-                const buffer = await Packer.toBuffer(doc);
-                caseFolder?.file(`signature_${caseItem.case_number}.docx`, buffer);
-                caseFolder?.file(`signature_${caseItem.case_number}.png`, imageBuffer);
-                
-              }
-            } catch (sigError) {
-              console.warn('⚠️ Erreur traitement signature dossier:', sigError);
-            }
-          }
-        }
+        // Signatures spécifiques à ce dossier (SUPPRIMÉ - utilise signatures client)
+        // Les signatures sont maintenant centralisées dans client_signatures
+        // Plus besoin de traiter les signatures par dossier
       }
     }
 
@@ -1145,7 +864,7 @@ export async function POST(request: NextRequest) {
     // 7. Retourner le ZIP
     const fileName = `${clientName.replace(/[^a-zA-Z0-9]/g, '_')}_documents_complets.zip`;
 
-    return new NextResponse(zipBuffer, {
+    return new NextResponse(zipBuffer as any, {
       status: 200,
       headers: {
         'Content-Type': 'application/zip',

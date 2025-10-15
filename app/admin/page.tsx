@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -13,6 +13,33 @@ import { AdminSettings } from "@/components/admin-settings"
 
 export default function AdminDashboard() {
   const [activeSection, setActiveSection] = useState("dashboard")
+  const [stats, setStats] = useState({
+    activeAgents: 0,
+    totalDocuments: 0,
+    todaySignatures: 0,
+    averageTime: '0min'
+  })
+  const [loading, setLoading] = useState(true)
+
+  // Récupérer les statistiques au chargement
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await fetch('/api/admin/dashboard-stats')
+        const result = await response.json()
+
+        if (result.success) {
+          setStats(result.data)
+        }
+      } catch (error) {
+        console.error('Erreur récupération statistiques:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchStats()
+  }, [])
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-slate-100">
       {/* Admin Header */}
@@ -47,13 +74,17 @@ export default function AdminDashboard() {
 
       <div className="mx-auto max-w-7xl p-6">
         {/* Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">Agents Actifs</p>
-                  <p className="text-2xl font-bold text-gray-900">12</p>
+                  {loading ? (
+                    <div className="animate-pulse bg-gray-200 h-8 w-16 rounded mt-1"></div>
+                  ) : (
+                    <p className="text-2xl font-bold text-gray-900">{stats.activeAgents}</p>
+                  )}
                 </div>
                 <Users className="h-8 w-8 text-blue-600" />
               </div>
@@ -65,7 +96,11 @@ export default function AdminDashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">Documents Traités</p>
-                  <p className="text-2xl font-bold text-gray-900">1,247</p>
+                  {loading ? (
+                    <div className="animate-pulse bg-gray-200 h-8 w-20 rounded mt-1"></div>
+                  ) : (
+                    <p className="text-2xl font-bold text-gray-900">{stats.totalDocuments.toLocaleString()}</p>
+                  )}
                 </div>
                 <FileText className="h-8 w-8 text-green-600" />
               </div>
@@ -77,7 +112,11 @@ export default function AdminDashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">Signatures Aujourd'hui</p>
-                  <p className="text-2xl font-bold text-gray-900">89</p>
+                  {loading ? (
+                    <div className="animate-pulse bg-gray-200 h-8 w-12 rounded mt-1"></div>
+                  ) : (
+                    <p className="text-2xl font-bold text-gray-900">{stats.todaySignatures}</p>
+                  )}
                 </div>
                 <Shield className="h-8 w-8 text-red-600" />
               </div>
@@ -89,7 +128,11 @@ export default function AdminDashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">Temps Moyen</p>
-                  <p className="text-2xl font-bold text-gray-900">2.3min</p>
+                  {loading ? (
+                    <div className="animate-pulse bg-gray-200 h-8 w-16 rounded mt-1"></div>
+                  ) : (
+                    <p className="text-2xl font-bold text-gray-900">{stats.averageTime}</p>
+                  )}
                 </div>
                 <Clock className="h-8 w-8 text-purple-600" />
               </div>

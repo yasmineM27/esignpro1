@@ -12,12 +12,32 @@ async function generateOpsioDocuments(caseData: any, clientData: any, signatureD
 
     const documents = [];
 
-    // Données communes pour les templates
+    // Récupérer les données complètes du client depuis la table clients (comme dans download-all-documents)
+    const { data: clientDetails } = await supabaseAdmin
+      .from('clients')
+      .select('address, city, postal_code, country, date_of_birth')
+      .eq('id', caseData?.clients?.id || caseData?.client_id)
+      .single();
+
+    // Construire l'adresse complète
+    let fullAddress = '';
+    if (clientDetails?.address) {
+      fullAddress = clientDetails.address;
+    }
+
+    let postalCity = '';
+    if (clientDetails?.postal_code && clientDetails?.city) {
+      postalCity = `${clientDetails.postal_code} ${clientDetails.city}`;
+    } else if (clientDetails?.city) {
+      postalCity = clientDetails.city;
+    }
+
+    // Données communes pour les templates (inspiré de download-all-documents)
     const templateData = {
       clientName: clientData?.nom || 'Client',
-      clientAddress: caseData?.clients?.address || 'Adresse non renseignée',
-      clientPostalCity: caseData?.clients?.city ? `${caseData.clients.postal_code || ''} ${caseData.clients.city}` : 'Ville non renseignée',
-      clientBirthdate: caseData?.clients?.date_of_birth || '',
+      clientAddress: fullAddress || '', // Adresse réelle ou vide
+      clientPostalCity: postalCity || '', // NPA/Localité réels ou vides
+      clientBirthdate: clientDetails?.date_of_birth ? new Date(clientDetails.date_of_birth).toLocaleDateString('fr-CH') : '',
       clientEmail: clientData?.email || '',
       clientPhone: clientData?.telephone || '',
       advisorName: 'Conseiller OPSIO',
@@ -25,8 +45,8 @@ async function generateOpsioDocuments(caseData: any, clientData: any, signatureD
       advisorPhone: '+41 78 305 12 77',
       insuranceCompany: caseData?.insurance_company || 'Compagnie d\'assurance',
       policyNumber: caseData?.policy_number || '',
-      lamalTerminationDate: caseData?.termination_date || '',
-      lcaTerminationDate: caseData?.termination_date || '',
+      lamalTerminationDate: caseData?.completed_at ? new Date(caseData.completed_at).toLocaleDateString('fr-CH') : '',
+      lcaTerminationDate: caseData?.completed_at ? new Date(caseData.completed_at).toLocaleDateString('fr-CH') : '',
       paymentMethod: 'commission',
       signatureData: signatureData || null // Signature réelle si fournie
     };
@@ -44,8 +64,8 @@ async function generateOpsioDocuments(caseData: any, clientData: any, signatureD
       const opsioBuffer = await OpsioRobustGenerator.generateRobustOpsioDocument(opsioData);
 
       if (opsioBuffer) {
-        // Le document OPSIO est maintenant en format Word
-        const fileName = 'Feuille_Information_OPSIO.docx';
+        // Le document OPSIO est maintenant en format Word (renommé comme dans download-all-documents)
+        const fileName = `Art45 - Optio-${caseData?.case_number || 'CASE'}.docx`;
 
         documents.push({
           name: fileName,
@@ -61,39 +81,39 @@ async function generateOpsioDocuments(caseData: any, clientData: any, signatureD
       console.error('❌ Erreur génération OPSIO:', error);
     }
 
-    // 2. Générer la lettre de résiliation si applicable
-    if (caseData?.reason_for_termination) {
-      try {
-        const resignationResponse = await fetch('http://localhost:3000/api/documents/generate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            documentType: 'resignation-letter',
-            clientId: caseData?.clients?.id,
-            data: {
-              ...templateData,
-              persons: [{
-                name: templateData.clientName,
-                birthdate: templateData.clientBirthdate,
-                policyNumber: templateData.policyNumber,
-                isAdult: true
-              }]
-            }
-          })
-        });
+    // 2. Générer la lettre de résiliation directement avec DocxGenerator (comme dans download-all-documents)
+    try {
+      console.log(`📄 Génération résiliation pour dossier ${caseData?.case_number}...`);
 
-        const resignationResult = await resignationResponse.json();
-        if (resignationResult.success) {
-          documents.push({
-            name: 'Lettre_Resiliation_Assurance.html',
-            content: resignationResult.document.content,
-            type: 'resignation-letter'
-          });
-          console.log('✅ Lettre de résiliation générée');
-        }
-      } catch (error) {
-        console.error('❌ Erreur génération résiliation:', error);
+      // Importer le générateur de documents Word
+      const { DocxGenerator } = await import('@/lib/docx-generator');
+
+      const clientDataForResignation = {
+        nomPrenom: templateData.clientName,
+        adresse: templateData.clientAddress,
+        npaVille: templateData.clientPostalCity,
+        lieuDate: `Genève, le ${new Date().toLocaleDateString('fr-CH')}`,
+        compagnieAssurance: templateData.insuranceCompany,
+        numeroPoliceLAMal: templateData.policyNumber,
+        numeroPoliceLCA: templateData.policyNumber,
+        dateResiliationLAMal: templateData.lamalTerminationDate,
+        dateResiliationLCA: templateData.lcaTerminationDate,
+        motifResiliation: 'Changement de situation',
+        personnes: [] // Pas de personnes supplémentaires pour l'instant
+      };
+
+      const resignationBuffer = await DocxGenerator.generateResignationDocument(clientDataForResignation, signatureData);
+
+      if (resignationBuffer) {
+        documents.push({
+          name: `Lettre_Resiliation_${caseData?.case_number || 'CASE'}.docx`,
+          content: resignationBuffer,
+          type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        });
+        console.log(`✅ Document résiliation généré pour ${caseData?.case_number} (${resignationBuffer.length} bytes)`);
       }
+    } catch (error) {
+      console.error('❌ Erreur génération résiliation:', error);
     }
 
     return documents;
@@ -141,18 +161,15 @@ async function handleDownload(caseId: string, clientId: string | null, options: 
       }, { status: 404 });
     }
 
-    // Récupérer les signatures du dossier (nouvelle et ancienne table)
-    const { data: signatures, error: sigError } = await supabaseAdmin
-      .from('signatures')
-      .select('*')
-      .eq('case_id', caseId);
-
-    // Récupérer aussi les signatures client (nouvelle table)
+    // Récupérer les signatures client (système centralisé)
     const { data: clientSignatures, error: clientSigError } = await supabaseAdmin
       .from('client_signatures')
       .select('*')
       .eq('client_id', clientId || caseData.clients?.id)
       .eq('is_active', true);
+
+    // Plus d'utilisation de l'ancienne table signatures
+    const signatures: any[] = [];
 
     // Récupérer les documents uploadés par le client
     const { data: clientDocuments, error: clientDocError } = await supabaseAdmin
@@ -186,12 +203,12 @@ async function handleDownload(caseId: string, clientId: string | null, options: 
         email: caseData.clients?.users?.email || 'email@example.com',
         telephone: caseData.clients?.users?.phone || 'Non renseigné'
       },
-      signatures: signatures?.map(sig => ({
+      signatures_client: clientSignatures?.map(sig => ({
         id: sig.id,
-        date_signature: sig.signed_at,
-        valide: sig.is_valid,
-        adresse_ip: sig.ip_address,
-        navigateur: sig.user_agent
+        nom_signature: sig.signature_name,
+        date_creation: sig.created_at,
+        active: sig.is_active,
+        par_defaut: sig.is_default
       })) || [],
       documents_client: clientDocuments?.map(doc => ({
         id: doc.id,
@@ -212,15 +229,16 @@ async function handleDownload(caseId: string, clientId: string | null, options: 
     // Ajouter le fichier d'informations JSON
     zip.file('informations-dossier.json', JSON.stringify(caseInfo, null, 2));
 
-    // Ajouter les signatures comme images
-    if (signatures && signatures.length > 0) {
-      const signaturesFolder = zip.folder('signatures');
-      signatures.forEach((sig, index) => {
+    // Ajouter les signatures client comme images
+    if (clientSignatures && clientSignatures.length > 0) {
+      const signaturesFolder = zip.folder('signatures-client');
+      clientSignatures.forEach((sig, index) => {
         if (sig.signature_data && sig.signature_data.startsWith('data:image/')) {
           // Extraire les données base64
           const base64Data = sig.signature_data.split(',')[1];
           const extension = sig.signature_data.includes('png') ? 'png' : 'jpg';
-          signaturesFolder?.file(`signature-${index + 1}-${sig.signed_at?.split('T')[0]}.${extension}`, base64Data, { base64: true });
+          const dateCreation = sig.created_at?.split('T')[0] || 'date-inconnue';
+          signaturesFolder?.file(`signature-client-${index + 1}-${dateCreation}.${extension}`, base64Data, { base64: true });
         }
       });
     }
@@ -329,14 +347,11 @@ Note: Le fichier original n'a pas pu être récupéré.`;
     if (options.generateWordWithSignature || options.includeWordDocuments) {
       const wordDocsFolder = zip.folder('documents-word-avec-signatures');
 
-      // Récupérer la signature la plus récente
+      // Récupérer la signature client (système centralisé)
       let signatureData = null;
       if (clientSignatures && clientSignatures.length > 0) {
         signatureData = clientSignatures[0].signature_data;
         console.log('✅ Signature client récupérée depuis client_signatures');
-      } else if (signatures && signatures.length > 0) {
-        signatureData = signatures[signatures.length - 1].signature_data;
-        console.log('✅ Signature récupérée depuis signatures (fallback)');
       }
 
       if (signatureData) {
@@ -469,8 +484,8 @@ Dossier:
 - Créé le: ${new Date(caseData.created_at).toLocaleString('fr-FR')}
 - Modifié le: ${new Date(caseData.updated_at).toLocaleString('fr-FR')}
 
-Signatures: ${signatures?.length || 0}
-${signatures?.map((sig, i) => `  ${i + 1}. Signée le ${new Date(sig.signed_at).toLocaleString('fr-FR')} - ${sig.is_valid ? 'Valide' : 'En attente'}`).join('\n') || '  Aucune signature'}
+Signatures Client: ${clientSignatures?.length || 0}
+${clientSignatures?.map((sig, i) => `  ${i + 1}. ${sig.signature_name} - Créée le ${new Date(sig.created_at).toLocaleString('fr-FR')} - ${sig.is_active ? 'Active' : 'Inactive'}`).join('\n') || '  Aucune signature client'}
 
 Documents: ${allDocuments.length || 0}
 ${allDocuments.map((doc, i) => `  ${i + 1}. ${doc.file_name} (${doc.file_type}) - ${doc.file_size} - Source: ${doc.source}`).join('\n') || '  Aucun document'}

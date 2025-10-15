@@ -92,74 +92,67 @@ export function AgentCompletedDynamic() {
     try {
       setIsLoading(true)
       
-      const response = await fetch('/api/agent/signatures?status=signed&limit=50')
+      const response = await fetch('/api/agent/completed-cases?limit=50')
       const data = await response.json()
 
       if (data.success) {
-        const formattedCases = data.signatures.map((sig: any) => {
-          // Utiliser les données formatées de l'API
-          const createdDate = new Date(sig.case?.createdAt || sig.signedAt)
-          const completedDate = new Date(sig.signedAt)
+        const formattedCases = data.cases.map((caseItem: any) => {
+          // Calculer les jours pour terminer
+          const createdDate = new Date(caseItem.createdAt)
+          const completedDate = new Date(caseItem.completedAt)
           const daysToComplete = Math.floor((completedDate.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24))
 
           return {
-            id: sig.id,
-            caseNumber: sig.case?.caseNumber || 'N/A',
-            status: sig.case?.status || 'completed',
-            secureToken: sig.case?.secureToken || '',
+            id: caseItem.id,
+            caseNumber: caseItem.caseNumber,
+            status: caseItem.status,
+            secureToken: caseItem.secureToken,
             client: {
-              id: sig.case?.client?.id || '',
-              firstName: sig.case?.client?.firstName || '',
-              lastName: sig.case?.client?.lastName || '',
-              fullName: `${sig.case?.client?.firstName || ''} ${sig.case?.client?.lastName || ''}`.trim(),
-              email: sig.case?.client?.email || '',
-              phone: sig.case?.client?.phone || ''
+              id: caseItem.client.id,
+              firstName: caseItem.client.firstName,
+              lastName: caseItem.client.lastName,
+              fullName: caseItem.client.fullName,
+              email: caseItem.client.email,
+              phone: caseItem.client.phone
             },
-            insuranceCompany: sig.case?.insuranceCompany || '',
-            policyType: sig.case?.insuranceType || '',
-            policyNumber: sig.case?.policyNumber || '',
-            createdAt: sig.case?.createdAt || sig.signedAt,
-            completedAt: sig.signedAt,
-            signature: {
-              id: sig.id,
-              signedAt: sig.signedAt,
-              signatureData: sig.signatureData,
-              isValid: sig.isValid,
-              validatedAt: sig.validatedAt,
-              validatedBy: sig.validatedBy
-            },
-            portalUrl: `https://esignpro.ch/client-portal/${sig.case?.secureToken}`,
+            insuranceCompany: '', // À ajouter si nécessaire
+            policyType: '', // À ajouter si nécessaire
+            policyNumber: '', // À ajouter si nécessaire
+            createdAt: caseItem.createdAt,
+            completedAt: caseItem.completedAt,
+            signature: caseItem.signature ? {
+              id: caseItem.signature.id,
+              signedAt: caseItem.signature.signedAt,
+              signatureData: caseItem.signature.signatureData,
+              isValid: caseItem.signature.isValid,
+              signatureName: caseItem.signature.signatureName
+            } : null,
+            portalUrl: `https://esignpro.ch/client-portal/${caseItem.secureToken}`,
             daysToComplete: daysToComplete,
-            completionScore: daysToComplete <= 1 ? 100 : daysToComplete <= 3 ? 90 : daysToComplete <= 7 ? 80 : 70
+            completionScore: daysToComplete <= 1 ? 100 : daysToComplete <= 3 ? 90 : daysToComplete <= 7 ? 80 : 70,
+            hasSignature: caseItem.hasSignature
           }
         })
 
         setCases(formattedCases)
-        
-        // Calculer les statistiques
-        const now = new Date()
-        const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
-        const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
-        
-        const thisWeek = formattedCases.filter((c: any) => new Date(c.completedAt) >= weekAgo).length
-        const thisMonth = formattedCases.filter((c: any) => new Date(c.completedAt) >= monthAgo).length
-        const validSignatures = formattedCases.filter((c: any) => c.signature.isValid).length
-        const averageTime = formattedCases.length > 0 
-          ? Math.round(formattedCases.reduce((sum: number, c: any) => sum + c.daysToComplete, 0) / formattedCases.length)
-          : 0
 
-        setStats({
-          total: formattedCases.length,
-          thisWeek,
-          thisMonth,
-          averageTime,
-          validSignatures
-        })
+        // Utiliser les statistiques calculées par l'API
+        setStats(data.stats)
       } else {
-        console.error('Erreur chargement dossiers terminés:', data.error)
+        console.error('Erreur API completed-cases:', data.error)
+        toast({
+          title: "❌ Erreur",
+          description: "Impossible de charger les dossiers terminés",
+          variant: "destructive"
+        })
       }
     } catch (error) {
-      console.error('Erreur API dossiers terminés:', error)
+      console.error('Erreur chargement dossiers:', error)
+      toast({
+        title: "❌ Erreur",
+        description: "Erreur lors du chargement des données",
+        variant: "destructive"
+      })
     } finally {
       setIsLoading(false)
     }
@@ -189,6 +182,14 @@ export function AgentCompletedDynamic() {
   }
 
   const viewSignature = (signature: any) => {
+    if (!signature) {
+      toast({
+        title: "❌ Aucune signature",
+        description: "Ce dossier n'a pas de signature enregistrée.",
+        variant: "destructive"
+      })
+      return
+    }
     setSelectedSignature(signature)
   }
 
@@ -445,14 +446,18 @@ export function AgentCompletedDynamic() {
                           Voir portail
                         </Button>
                         
-                        <Button 
-                          variant="outline" 
+                        <Button
+                          variant="outline"
                           size="sm"
                           onClick={() => viewSignature(caseItem.signature)}
-                          className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                          disabled={!caseItem.signature}
+                          className={caseItem.signature
+                            ? "text-blue-600 border-blue-200 hover:bg-blue-50"
+                            : "text-gray-400 border-gray-200"
+                          }
                         >
                           <Signature className="h-4 w-4 mr-2" />
-                          Voir signature
+                          {caseItem.signature ? 'Voir signature' : 'Pas de signature'}
                         </Button>
 
                         <Button

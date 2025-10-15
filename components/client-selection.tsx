@@ -35,6 +35,8 @@ interface Client {
   city: string
   postalCode: string
   country: string
+  policyNumber: string
+  insuranceCompany: string
   hasSignature: boolean
   signatureCount: number
   createdAt: string
@@ -63,7 +65,6 @@ export function ClientSelection({
   const [selectedClient, setSelectedClient] = useState<Client | null>(null)
   const [showResults, setShowResults] = useState(false)
   const [stats, setStats] = useState<any>(null)
-  const [onlyWithSignature, setOnlyWithSignature] = useState(false)
 
   // Debounced search function
   const searchClients = useCallback(async (search: string) => {
@@ -78,8 +79,7 @@ export function ClientSelection({
       const params = new URLSearchParams({
         search: search,
         limit: '10',
-        includeSignatureStatus: 'true',
-        onlyWithSignature: onlyWithSignature.toString()
+        includeSignatureStatus: 'true'
       })
 
       const response = await fetch(`/api/agent/client-selection?${params}`)
@@ -125,7 +125,7 @@ export function ClientSelection({
     }, 300)
 
     return () => clearTimeout(timer)
-  }, [searchTerm, onlyWithSignature, searchClients])
+  }, [searchTerm, searchClients])
 
   // Handle client selection
   const handleClientSelect = (client: Client) => {
@@ -197,26 +197,7 @@ export function ClientSelection({
           </div>
 
           {/* Filter Options */}
-          <div className="flex items-center space-x-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-            <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                id="signature-filter"
-                checked={onlyWithSignature}
-                onChange={(e) => setOnlyWithSignature(e.target.checked)}
-                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-              />
-              <Label htmlFor="signature-filter" className="text-sm font-medium text-blue-800">
-                <FileSignature className="h-4 w-4 inline mr-1" />
-                Afficher uniquement les clients avec signature
-              </Label>
-            </div>
-            {onlyWithSignature && (
-              <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-                Filtre actif
-              </Badge>
-            )}
-          </div>
+
 
           {/* Loading indicator */}
           {isLoading && (
@@ -243,12 +224,9 @@ export function ClientSelection({
                 {clients.length === 0 ? (
                   <div className="text-center py-4 text-gray-500">
                     <AlertCircle className="h-8 w-8 mx-auto mb-2 text-gray-400" />
-                    <p>{onlyWithSignature ? "Aucun client avec signature trouvé" : "Aucun client trouvé"}</p>
+                    <p>Aucun client trouvé</p>
                     <p className="text-xs">
-                      {onlyWithSignature
-                        ? "Essayez de désactiver le filtre ou créez un nouveau client"
-                        : "Essayez avec d'autres termes de recherche"
-                      }
+                      Essayez avec d'autres termes de recherche
                     </p>
                   </div>
                 ) : (
@@ -291,6 +269,18 @@ export function ClientSelection({
                                 <div className="flex items-center gap-1">
                                   <Phone className="h-3 w-3" />
                                   {client.phone}
+                                </div>
+                              )}
+                              {client.dateOfBirth && (
+                                <div className="flex items-center gap-1">
+                                  <Calendar className="h-3 w-3" />
+                                  <span className="text-xs">Né(e) le {new Date(client.dateOfBirth).toLocaleDateString('fr-FR')}</span>
+                                </div>
+                              )}
+                              {client.policyNumber && (
+                                <div className="flex items-center gap-1">
+                                  <FileSignature className="h-3 w-3" />
+                                  <span className="text-xs">Police: {client.policyNumber}</span>
                                 </div>
                               )}
                               {client.address && (

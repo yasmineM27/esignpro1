@@ -113,6 +113,7 @@ export default function EnhancedClientPortal({ caseData, documents, token }: Enh
   const [showSignatureModal, setShowSignatureModal] = useState(false);
   const [showViewSignatureModal, setShowViewSignatureModal] = useState(false);
   const [isEditingSignature, setIsEditingSignature] = useState(false);
+  const [applyingSignature, setApplyingSignature] = useState(false);
 
   // Récupérer la signature du client au chargement
   useEffect(() => {
@@ -176,6 +177,55 @@ export default function EnhancedClientPortal({ caseData, documents, token }: Enh
         description: "Impossible de supprimer la signature.",
         variant: "destructive"
       });
+    }
+  };
+
+  // Fonction pour appliquer la signature aux documents
+  const applySignatureToDocuments = async () => {
+    if (!clientSignature) {
+      toast({
+        title: "❌ Erreur",
+        description: "Aucune signature trouvée. Veuillez d'abord créer votre signature.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setApplyingSignature(true);
+
+    try {
+      const response = await fetch('/api/client-portal/apply-signature', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ token }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        toast({
+          title: "✅ Signature appliquée",
+          description: `Votre signature a été appliquée avec succès. Votre dossier est maintenant terminé.`,
+        });
+
+        // Recharger la page pour refléter le nouveau statut
+        setTimeout(() => {
+          window.location.reload();
+        }, 2000);
+      } else {
+        throw new Error(result.error);
+      }
+    } catch (error) {
+      console.error('Erreur application signature:', error);
+      toast({
+        title: "❌ Erreur",
+        description: "Impossible d'appliquer la signature aux documents.",
+        variant: "destructive",
+      });
+    } finally {
+      setApplyingSignature(false);
     }
   };
 
@@ -397,7 +447,7 @@ export default function EnhancedClientPortal({ caseData, documents, token }: Enh
                       </p>
                     </div>
 
-                    <div className="flex space-x-2">
+                    <div className="flex space-x-2 mb-4">
                       <Button
                         variant="outline"
                         size="sm"
@@ -426,6 +476,25 @@ export default function EnhancedClientPortal({ caseData, documents, token }: Enh
                         Supprimer
                       </Button>
                     </div>
+
+                    {/* Bouton pour appliquer la signature aux documents */}
+                    <Button
+                      onClick={applySignatureToDocuments}
+                      disabled={applyingSignature}
+                      className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
+                    >
+                      {applyingSignature ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          Application en cours...
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle className="h-4 w-4 mr-2" />
+                          Appliquer aux documents
+                        </>
+                      )}
+                    </Button>
                   </div>
                 ) : (
                   <div className="text-center space-y-4">
